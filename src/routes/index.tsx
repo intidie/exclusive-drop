@@ -1,29 +1,35 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import LoadingScreen from "@/components/LoadingScreen";
+import Hero from "@/components/Hero";
+import DropSection from "@/components/DropSection";
+import CheckoutSection from "@/components/CheckoutSection";
+import SiteFooter from "@/components/SiteFooter";
+import FloatingContact from "@/components/FloatingContact";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Your App" },
-      { name: "description", content: "Replace this with a one-sentence description of your app." },
-      { property: "og:title", content: "Your App" },
-      { property: "og:description", content: "Replace this with a one-sentence description of your app." },
+      { title: "LIVE LEAKS by intit — Drop único" },
+      { name: "description", content: "Drop exclusivo de camisas LIVE LEAKS by intit. Edición limitada de 6 unidades. Pago por Nequi o contraentrega." },
+      { property: "og:title", content: "LIVE LEAKS by intit — Drop único" },
+      { property: "og:description", content: "Drop exclusivo de camisas. Edición limitada de 6 unidades." },
     ],
+    links: [{ rel: "icon", href: "/favicon.png" }],
   }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
+  const [loaded, setLoaded] = useState(false);
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="bg-white text-black min-h-screen font-sans">
+      {!loaded && <LoadingScreen onDone={() => setLoaded(true)} />}
+      <Hero />
+      <DropSection />
+      <CheckoutSection />
+      <SiteFooter />
+      <FloatingContact />
     </div>
   );
 }
