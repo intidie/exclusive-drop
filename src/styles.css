@@ -132,12 +132,18 @@
   --sidebar-ring: oklch(0.551 0.027 264.364);
 }
 
+@theme {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
 @layer base {
   * {
     border-color: var(--color-border);
   }
 
-  body {
+  html, body {
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
     background-color: var(--color-background);
     color: var(--color-foreground);
   }
