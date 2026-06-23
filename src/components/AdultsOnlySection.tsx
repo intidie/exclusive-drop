@@ -56,6 +56,15 @@ export default function AdultsOnlySection() {
             <img
               src={adultsOnly.url}
               alt="Adults Only 18+"
+              loading="lazy"
+              decoding="async"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src =
+                  "data:image/svg+xml;utf8," +
+                  encodeURIComponent(
+                    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 320'><rect width='220' height='320' fill='#000'/><text x='50%' y='50%' fill='#fff' font-family='monospace' font-size='40' font-weight='900' text-anchor='middle' dominant-baseline='middle'>18+</text></svg>`,
+                  );
+              }}
               className="w-full h-full object-contain drop-shadow-[0_0_30px_rgba(255,255,255,0.25)] invert"
             />
           </div>
