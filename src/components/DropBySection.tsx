@@ -23,6 +23,15 @@ export default function DropBySection() {
           whileHover={{ scale: 1.04 }}
           src={intitPack.url}
           alt="INTI(t) Pleasure Pack"
+          loading="lazy"
+          decoding="async"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src =
+              "data:image/svg+xml;utf8," +
+              encodeURIComponent(
+                `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 600'><rect width='600' height='600' fill='#111'/><text x='50%' y='50%' fill='#fff' font-family='monospace' font-size='48' font-weight='900' text-anchor='middle' dominant-baseline='middle'>INTI(t)</text></svg>`,
+              );
+          }}
           className="w-full max-w-md md:max-w-lg shadow-[0_20px_60px_rgba(255,255,255,0.08)]"
         />
 
