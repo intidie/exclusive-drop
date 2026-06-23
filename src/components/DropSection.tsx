@@ -1,6 +1,7 @@
 import { motion } from "motion/react";
 import { useState } from "react";
 import { DROP, waLink } from "@/lib/drop-data";
+import ProductZoom from "./ProductZoom";
 
 const fadeUp = {
   initial: { opacity: 0, y: 40 },
@@ -10,10 +11,18 @@ const fadeUp = {
 };
 
 function formatCOP(n: number) {
-  return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
+  return new Intl.NumberFormat("es-CO", {
+    style: "currency",
+    currency: "COP",
+    maximumFractionDigits: 0,
+  }).format(n);
 }
 
 export default function DropSection() {
+  const p = DROP.product;
+  const [size, setSize] = useState<string | null>(null);
+  const soldOut = p.stock === 0;
+
   return (
     <section id="drop" className="bg-white text-black py-24 md:py-32 px-6">
       <motion.div {...fadeUp} className="max-w-6xl mx-auto mb-16 md:mb-24">
@@ -24,81 +33,54 @@ export default function DropSection() {
         </p>
       </motion.div>
 
-      <div className="max-w-6xl mx-auto grid gap-20 md:gap-28">
-        {DROP.products.map((p, i) => (
-          <ProductCard key={p.id} product={p} reverse={i % 2 === 1} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function ProductCard({ product, reverse }: { product: typeof DROP.products[number]; reverse: boolean }) {
-  const [size, setSize] = useState<string | null>(null);
-  const soldOut = product.stock === 0;
-
-  return (
-    <motion.article
-      {...fadeUp}
-      className={`grid md:grid-cols-2 gap-8 md:gap-16 items-center ${reverse ? "md:[&>*:first-child]:order-2" : ""}`}
-    >
-      <motion.div
-        className="relative aspect-[3/4] bg-neutral-50 overflow-hidden"
-        whileHover={{ scale: 1.01 }}
-        transition={{ duration: 0.4 }}
-      >
-        <motion.img
-          src={product.image}
-          alt={product.name}
-          loading="lazy"
-          className="absolute inset-0 w-full h-full object-cover"
-          initial={{ opacity: 0, scale: 1.05 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1 }}
-        />
-      </motion.div>
-
-      <div className="flex flex-col gap-6">
-        <div>
-          <h3 className="text-2xl md:text-4xl font-black tracking-tight">{product.name}</h3>
-          <p className="mt-2 text-lg">{formatCOP(product.price)}</p>
+      <motion.article {...fadeUp} className="max-w-6xl mx-auto grid md:grid-cols-2 gap-8 md:gap-16 items-start">
+        <div className="grid grid-cols-1 gap-4">
+          {p.images.map((src, i) => (
+            <ProductZoom key={i} src={src} alt={`${p.name} vista ${i + 1}`} />
+          ))}
         </div>
 
-        <StockIndicator stock={product.stock} total={DROP.totalUnits} />
-
-        <div>
-          <p className="text-xs tracking-[0.2em] uppercase mb-3">Talla</p>
-          <div className="flex flex-wrap gap-2">
-            {product.sizes.map((s) => (
-              <button
-                key={s}
-                onClick={() => setSize(s)}
-                disabled={soldOut}
-                className={`w-12 h-12 border border-black text-sm font-medium transition-all duration-200 hover:bg-black hover:text-white disabled:opacity-30 disabled:cursor-not-allowed ${
-                  size === s ? "bg-black text-white" : "bg-white text-black"
-                }`}
-              >
-                {s}
-              </button>
-            ))}
+        <div className="flex flex-col gap-6 md:sticky md:top-10">
+          <div>
+            <h3 className="text-2xl md:text-4xl font-black tracking-tight">{p.name}</h3>
+            <p className="mt-2 text-lg">{formatCOP(p.price)}</p>
           </div>
-        </div>
 
-        <a
-          href={waLink(`Producto: ${product.name}${size ? ` — Talla ${size}` : ""}`)}
-          target="_blank"
-          rel="noreferrer"
-          className={`inline-flex items-center justify-center h-14 px-8 text-sm tracking-[0.2em] uppercase font-semibold transition-all duration-300 ${
-            soldOut
-              ? "bg-neutral-200 text-neutral-500 cursor-not-allowed pointer-events-none"
-              : "bg-black text-white hover:bg-white hover:text-black border border-black"
-          }`}
-        >
-          {soldOut ? "Agotado" : "Apartar por WhatsApp"}
-        </a>
-      </div>
-    </motion.article>
+          <StockIndicator stock={p.stock} total={DROP.totalUnits} />
+
+          <div>
+            <p className="text-xs tracking-[0.2em] uppercase mb-3">Talla</p>
+            <div className="flex flex-wrap gap-2">
+              {p.sizes.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setSize(s)}
+                  disabled={soldOut}
+                  className={`w-12 h-12 border border-black text-sm font-medium transition-all duration-200 hover:bg-black hover:text-white disabled:opacity-30 disabled:cursor-not-allowed ${
+                    size === s ? "bg-black text-white" : "bg-white text-black"
+                  }`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <a
+            href={waLink(`Producto: ${p.name}${size ? ` — Talla ${size}` : ""}`)}
+            target="_blank"
+            rel="noreferrer"
+            className={`inline-flex items-center justify-center h-14 px-8 text-sm tracking-[0.2em] uppercase font-semibold transition-all duration-300 ${
+              soldOut
+                ? "bg-neutral-200 text-neutral-500 cursor-not-allowed pointer-events-none"
+                : "bg-black text-white hover:bg-white hover:text-black border border-black"
+            }`}
+          >
+            {soldOut ? "Agotado" : "Apartar por WhatsApp"}
+          </a>
+        </div>
+      </motion.article>
+    </section>
   );
 }
 
@@ -108,7 +90,9 @@ function StockIndicator({ stock, total }: { stock: number; total: number }) {
     <div>
       <div className="flex justify-between text-xs tracking-[0.2em] uppercase mb-2">
         <span>Stock</span>
-        <span>Solo {stock}/{total} restantes</span>
+        <span>
+          Solo {stock}/{total} restantes
+        </span>
       </div>
       <div className="h-px w-full bg-neutral-200 relative">
         <motion.div
