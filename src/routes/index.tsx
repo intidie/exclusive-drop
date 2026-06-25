@@ -6,19 +6,20 @@ import AdultsOnlySection from "@/components/AdultsOnlySection";
 import DropSection from "@/components/DropSection";
 import DropBySection from "@/components/DropBySection";
 import CheckoutSection from "@/components/CheckoutSection";
+import TermsSection from "@/components/TermsSection";
 import SiteFooter from "@/components/SiteFooter";
 import FloatingContact from "@/components/FloatingContact";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "LIVE LEAKS by intit — Drop único" },
+      { title: "LIVE LEAKS by INTI(t) — Drop único" },
       {
         name: "description",
         content:
-          "Drop exclusivo de camisas LIVE LEAKS by intit. Edición limitada de 6 unidades. Pago por Nequi o contraentrega.",
+          "Drop exclusivo de camisas LIVE LEAKS by INTI(t). Edición limitada de 6 unidades. Pago por Nequi o contraentrega.",
       },
-      { property: "og:title", content: "LIVE LEAKS by intit — Drop único" },
+      { property: "og:title", content: "LIVE LEAKS by INTI(t) — Drop único" },
       { property: "og:description", content: "Drop exclusivo de camisas. Edición limitada de 6 unidades." },
     ],
     links: [{ rel: "icon", href: "/favicon.png" }],
@@ -36,6 +37,7 @@ function Index() {
       <DropSection />
       <DropBySection />
       <CheckoutSection />
+      <TermsSection />
       <SiteFooter />
       <FloatingContact />
     </div>
