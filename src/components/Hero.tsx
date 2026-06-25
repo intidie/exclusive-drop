@@ -1,7 +1,6 @@
 import { motion } from "motion/react";
 import FaultyTerminal from "./FaultyTerminal.jsx";
 import liveLeakLogo from "@/assets/liveleak-logo-transparent.png";
-import shirtGif from "@/assets/camisa-3d.gif.asset.json";
 
 export default function Hero({ start = true }: { start?: boolean }) {
   return (
@@ -45,26 +44,6 @@ export default function Hero({ start = true }: { start?: boolean }) {
       </motion.div>
 
       <div className="relative z-10 flex flex-col items-center justify-center h-full px-6 text-center pointer-events-none">
-        {/* Floating 3D shirt gif popup */}
-        <motion.img
-          src={shirtGif.url}
-          alt="Camisa 3D"
-          loading="eager"
-          decoding="async"
-          initial={{ opacity: 0, scale: 0.6, y: 30 }}
-          animate={
-            start
-              ? { opacity: [0, 1, 1, 1], scale: 1, y: [0, -10, 0, -8, 0] }
-              : {}
-          }
-          transition={{
-            opacity: { duration: 0.8, ease: "easeOut" },
-            scale: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
-            y: { duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.8 },
-          }}
-          className="w-28 sm:w-36 md:w-44 mb-2 drop-shadow-[0_10px_25px_rgba(0,0,0,0.7)] pointer-events-none"
-        />
-
         <motion.img
           src={liveLeakLogo}
           alt="LiveLeak"
@@ -77,25 +56,20 @@ export default function Hero({ start = true }: { start?: boolean }) {
         />
 
         <motion.h1
-          initial={{ opacity: 0, scale: 0.7, filter: "blur(10px)" }}
+          initial={{ opacity: 0, scale: 0.85 }}
           animate={
             start
-              ? {
-                  scale: 1,
-                  filter: "blur(0px)",
-                  opacity: [0, 1, 0.55, 1, 0.7, 1],
-                }
+              ? { scale: 1, opacity: [0, 1, 0, 1, 0, 1] }
               : {}
           }
           transition={{
-            scale: { duration: 0.9, ease: [0.22, 1, 0.36, 1] },
-            filter: { duration: 0.9, ease: [0.22, 1, 0.36, 1] },
-            opacity: { duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 0.9 },
+            scale: { duration: 0.3, ease: "easeOut" },
+            opacity: { duration: 1.2, times: [0, 0.25, 0.5, 0.75, 0.9, 1], repeat: Infinity, repeatDelay: 0.4, ease: "linear" },
           }}
           className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tight text-white"
           style={{
-            WebkitTextStroke: "2px #000",
-            textShadow: "0 4px 14px rgba(0,0,0,0.55), 0 0 30px rgba(255,255,255,0.15)",
+            WebkitTextStroke: "4px #000",
+            textShadow: "0 4px 14px rgba(0,0,0,0.65), 0 0 30px rgba(255,255,255,0.15)",
           }}
         >
           LIVE LEAKS!!!
@@ -103,17 +77,12 @@ export default function Hero({ start = true }: { start?: boolean }) {
 
         <motion.p
           initial={{ opacity: 0 }}
-          animate={start ? { opacity: [0, 1, 0.5, 1] } : {}}
-          transition={{
-            duration: 4.5,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 1.3,
-          }}
-          className="mt-3 text-sm sm:text-base md:text-lg font-mono tracking-[0.4em] text-white uppercase"
+          animate={start ? { opacity: 1 } : {}}
+          transition={{ duration: 0.4, delay: 0.3 }}
+          className="mt-3 text-sm sm:text-base md:text-lg font-mono tracking-[0.4em] uppercase"
           style={{
-            WebkitTextStroke: "1px #000",
-            textShadow: "0 2px 8px rgba(0,0,0,0.6)",
+            color: "#ffffff",
+            textShadow: "0 2px 0 #000, 0 0 6px #000, 0 0 14px rgba(0,0,0,0.9)",
           }}
         >
           DROP BY INTI(t)

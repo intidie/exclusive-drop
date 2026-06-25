@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "asset_id": "77ca47c9-fa85-41b1-8636-3be4269dc40e",
+  "asset_id": "local-camisa-3d",
   "project_id": "a597067b-b02c-465f-a484-04190d5b9887",
-  "url": "/__l5e/assets-v1/77ca47c9-fa85-41b1-8636-3be4269dc40e/camisa-3d.gif",
-  "r2_key": "a/v1/a597067b-b02c-465f-a484-04190d5b9887/77ca47c9-fa85-41b1-8636-3be4269dc40e/camisa-3d.gif",
+  "url": "/images/camisa-3d.gif",
+  "r2_key": "",
   "original_filename": "camisa-3d.gif",
   "size": 3471926,
   "content_type": "image/gif",
-  "created_at": "2026-06-25T01:45:54Z"
+  "created_at": "2026-06-25T02:02:00Z"
 }
