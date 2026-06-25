@@ -14,11 +14,11 @@ const TERMS = [
   },
   {
     t: "Pagos",
-    d: "Aceptamos Nequi (pago inmediato) y Pago Contraentrega en ciudades principales de Colombia. Para contraentrega puede aplicar un valor adicional según ciudad.",
+    d: "Aceptamos Nequi y Pago Contraentrega en Colombia. Para pagos internacionales: PayPal, Wise, billeteras digitales y criptomonedas (BTC, ETH, USDT/USDC). El precio referencia se calcula a una TRM de 4.000 COP/USD; el valor final en cripto/USD se confirma al momento del pago.",
   },
   {
     t: "Envíos",
-    d: "Envío nacional en Colombia (3-7 días hábiles). El comprador asume el costo del envío salvo que se indique lo contrario en la confirmación.",
+    d: "Envío nacional en Colombia (3-7 días hábiles) y envíos internacionales a cualquier parte del mundo (7-21 días hábiles según destino). El comprador asume el costo del envío y posibles impuestos/aduanas del país de destino, salvo indicación contraria.",
   },
   {
     t: "Cambios y devoluciones",
