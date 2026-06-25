@@ -2,6 +2,7 @@ import { motion } from "motion/react";
 import { useState } from "react";
 import { DROP, waLink } from "@/lib/drop-data";
 import ProductZoom from "./ProductZoom";
+import SizeGuideModal from "./SizeGuideModal";
 
 const fadeUp = {
   initial: { opacity: 0, y: 40 },
@@ -20,7 +21,7 @@ function formatCOP(n: number) {
 
 export default function DropSection() {
   const p = DROP.product;
-  const [size, setSize] = useState<string | null>(null);
+  const [guideOpen, setGuideOpen] = useState(false);
   const soldOut = p.stock === 0;
 
   return (
@@ -49,25 +50,22 @@ export default function DropSection() {
           <StockIndicator stock={p.stock} total={DROP.totalUnits} />
 
           <div>
-            <p className="text-xs tracking-[0.2em] uppercase mb-3">Talla</p>
-            <div className="flex flex-wrap gap-2">
-              {p.sizes.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setSize(s)}
-                  disabled={soldOut}
-                  className={`w-12 h-12 border border-black text-sm font-medium transition-all duration-200 hover:bg-black hover:text-white disabled:opacity-30 disabled:cursor-not-allowed ${
-                    size === s ? "bg-black text-white" : "bg-white text-black"
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs tracking-[0.2em] uppercase">Talla</p>
+              <button
+                onClick={() => setGuideOpen(true)}
+                className="text-xs tracking-[0.2em] uppercase underline underline-offset-4 hover:opacity-60"
+              >
+                Guía de tallas
+              </button>
+            </div>
+            <div className="inline-flex items-center justify-center h-12 px-6 border border-black text-sm font-medium bg-black text-white">
+              Talla Única (Oversize)
             </div>
           </div>
 
           <a
-            href={waLink(`Producto: ${p.name}${size ? ` — Talla ${size}` : ""}`)}
+            href={waLink(`Producto: ${p.name} — Talla Única`)}
             target="_blank"
             rel="noreferrer"
             className={`inline-flex items-center justify-center h-14 px-8 text-sm tracking-[0.2em] uppercase font-semibold transition-all duration-300 ${
@@ -80,6 +78,8 @@ export default function DropSection() {
           </a>
         </div>
       </motion.article>
+
+      <SizeGuideModal open={guideOpen} onClose={() => setGuideOpen(false)} />
     </section>
   );
 }
