@@ -7,7 +7,15 @@ const FALLBACK =
     `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 750'><rect width='600' height='750' fill='#f4f4f4'/><text x='50%' y='50%' fill='#999' font-family='monospace' font-size='28' text-anchor='middle' dominant-baseline='middle'>INTI(t)</text></svg>`,
   );
 
-export default function ProductZoom({ src, alt }: { src: string; alt: string }) {
+export default function ProductZoom({
+  src,
+  alt,
+  eager = false,
+}: {
+  src: string;
+  alt: string;
+  eager?: boolean;
+}) {
   const [current, setCurrent] = useState(src);
   const [loaded, setLoaded] = useState(false);
   const [hover, setHover] = useState(false);
@@ -22,8 +30,10 @@ export default function ProductZoom({ src, alt }: { src: string; alt: string }) 
       <motion.img
         src={current}
         alt={alt}
-        loading="lazy"
+        loading={eager ? "eager" : "lazy"}
+        fetchPriority={eager ? "high" : "auto"}
         decoding="async"
+
         onLoad={() => setLoaded(true)}
         onError={() => {
           setCurrent(FALLBACK);

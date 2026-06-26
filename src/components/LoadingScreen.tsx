@@ -5,31 +5,24 @@ export default function LoadingScreen({ onDone }: { onDone: () => void }) {
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    const t1 = setTimeout(() => setVisible(false), 1200);
-    const t2 = setTimeout(onDone, 1750);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
-  }, [onDone]);
+    const t = setTimeout(() => setVisible(false), 1000);
+    return () => clearTimeout(t);
+  }, []);
 
   return (
-    <AnimatePresence>
+    <AnimatePresence onExitComplete={onDone}>
       {visible && (
         <motion.div
+          key="loader"
           className="fixed inset-0 z-[100] flex items-center justify-center bg-white"
           initial={{ opacity: 1 }}
+          animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5, ease: "easeInOut" }}
         >
-          <motion.h1
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, ease: "easeInOut" }}
-            className="text-3xl md:text-5xl font-extrabold tracking-[0.25em] text-black"
-          >
+          <h1 className="text-3xl md:text-5xl font-extrabold tracking-[0.25em] text-black">
             LIVE LEAKS
-          </motion.h1>
+          </h1>
         </motion.div>
       )}
     </AnimatePresence>
