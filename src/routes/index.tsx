@@ -38,7 +38,7 @@ function Index() {
   const [loaderGone, setLoaderGone] = useState(false);
 
   return (
-    <div className="bg-white text-black min-h-screen font-sans">
+    <div className="bg-black text-black min-h-screen font-sans">
       <LoadingScreen onDone={() => setLoaderGone(true)} />
       <Hero start={loaderGone} />
       <Suspense fallback={null}>
