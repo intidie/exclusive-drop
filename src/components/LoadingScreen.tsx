@@ -14,15 +14,16 @@ export default function LoadingScreen({ onDone }: { onDone: () => void }) {
       {visible && (
         <motion.div
           key="loader"
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-white"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black"
           initial={{ opacity: 1 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5, ease: "easeInOut" }}
         >
-          <h1 className="text-3xl md:text-5xl font-extrabold tracking-[0.25em] text-black">
+          <h1 className="text-3xl md:text-5xl font-extrabold tracking-[0.25em] text-white">
             LIVE LEAKS
           </h1>
+
         </motion.div>
       )}
     </AnimatePresence>
