@@ -1,4 +1,3 @@
-import { motion } from "motion/react";
 import { useState } from "react";
 
 const FALLBACK =
@@ -16,34 +15,21 @@ export default function ProductZoom({
   alt: string;
   eager?: boolean;
 }) {
-  const [current, setCurrent] = useState(src);
-  const [loaded, setLoaded] = useState(false);
-  const [hover, setHover] = useState(false);
+  const [errored, setErrored] = useState(false);
 
   return (
-    <div
-      className="relative w-full aspect-[4/5] overflow-hidden bg-neutral-100 cursor-zoom-in"
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-    >
-      {!loaded && <div className="absolute inset-0 animate-pulse bg-neutral-200" />}
-      <motion.img
-        src={current}
+    <div className="group relative w-full aspect-[4/5] overflow-hidden bg-neutral-100 cursor-zoom-in">
+      <img
+        src={errored ? FALLBACK : src}
         alt={alt}
         loading={eager ? "eager" : "lazy"}
-        fetchPriority={eager ? "high" : "auto"}
+        // @ts-expect-error native HTML attribute
+        fetchpriority={eager ? "high" : "auto"}
         decoding="async"
-
-        onLoad={() => setLoaded(true)}
-        onError={() => {
-          setCurrent(FALLBACK);
-          setLoaded(true);
-        }}
-        animate={{ scale: hover ? 1.6 : 1 }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="w-full h-full object-cover select-none"
-        style={{ opacity: loaded ? 1 : 0, transition: "opacity 0.3s" }}
         draggable={false}
+        onError={() => setErrored(true)}
+        className="w-full h-full object-cover select-none transition-transform duration-500 ease-out group-hover:scale-[1.6]"
+        style={{ willChange: "transform" }}
       />
     </div>
   );
