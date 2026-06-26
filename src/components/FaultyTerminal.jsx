@@ -12,6 +12,9 @@ void main() {
 }
 `;
 
+// Optimized fragment shader:
+//  - rotation matrices passed as uniforms (no per-pixel sin/cos)
+//  - glow approximated analytically (1 digit() call instead of 9)
 const fragmentShader = `
 precision mediump float;
 varying vec2 vUv;
@@ -28,12 +31,13 @@ uniform float uChromaticAberration;
 uniform float uDither;
 uniform float uCurvature;
 uniform vec3  uTint;
-uniform vec2  uMouse;
-uniform float uMouseStrength;
-uniform float uUseMouse;
 uniform float uPageLoadProgress;
 uniform float uUsePageLoadAnimation;
 uniform float uBrightness;
+uniform mat2  uRotA;
+uniform mat2  uRotB;
+uniform mat2  uRotPat;
+uniform mat2  uRotFixed;
 float time;
 float hash21(vec2 p){
   p = fract(p * 234.56);
@@ -43,49 +47,32 @@ float hash21(vec2 p){
 float noise(vec2 p){
   return sin(p.x * 10.0) * sin(p.y * (3.0 + sin(time * 0.090909))) + 0.2;
 }
-mat2 rotate(float angle){
-  float c = cos(angle); float s = sin(angle);
-  return mat2(c, -s, s, c);
-}
 float fbm(vec2 p){
   p *= 1.1;
   float f = 0.0;
   float amp = 0.5 * uNoiseAmp;
-  mat2 modify0 = rotate(time * 0.02);
-  f += amp * noise(p); p = modify0 * p * 2.0; amp *= 0.454545;
-  mat2 modify1 = rotate(time * 0.02);
-  f += amp * noise(p); p = modify1 * p * 2.0; amp *= 0.454545;
-  mat2 modify2 = rotate(time * 0.08);
+  f += amp * noise(p); p = uRotA * p * 2.0; amp *= 0.454545;
+  f += amp * noise(p); p = uRotA * p * 2.0; amp *= 0.454545;
   f += amp * noise(p);
   return f;
 }
-float pattern(vec2 p, out vec2 q, out vec2 r) {
+float pattern(vec2 p) {
   vec2 offset1 = vec2(1.0); vec2 offset0 = vec2(0.0);
-  mat2 rot01 = rotate(0.1 * time); mat2 rot1 = rotate(0.1);
-  q = vec2(fbm(p + offset1), fbm(rot01 * p + offset1));
-  r = vec2(fbm(rot1 * q + offset0), fbm(q + offset0));
+  vec2 q = vec2(fbm(p + offset1), fbm(uRotPat * p + offset1));
+  vec2 r = vec2(fbm(uRotFixed * q + offset0), fbm(q + offset0));
   return fbm(p + r);
 }
-float digit(vec2 p){
+// Returns (mainBrightness, cellIntensity) so glow can be approximated cheaply.
+vec2 digit2(vec2 p){
     vec2 grid = uGridMul * 15.0;
     vec2 s = floor(p * grid) / grid;
     p = p * grid;
-    vec2 q, r;
-    float intensity = pattern(s * 0.1, q, r) * 1.3 - 0.03;
-    if(uUseMouse > 0.5){
-        vec2 mouseWorld = uMouse * uScale;
-        float distToMouse = distance(s, mouseWorld);
-        float mouseInfluence = exp(-distToMouse * 8.0) * uMouseStrength * 10.0;
-        intensity += mouseInfluence;
-        float ripple = sin(distToMouse * 20.0 - iTime * 5.0) * 0.1 * mouseInfluence;
-        intensity += ripple;
-    }
+    float intensity = pattern(s * 0.1) * 1.3 - 0.03;
     if(uUsePageLoadAnimation > 0.5){
         float cellRandom = fract(sin(dot(s, vec2(12.9898, 78.233))) * 43758.5453);
         float cellDelay = cellRandom * 0.8;
         float cellProgress = clamp((uPageLoadProgress - cellDelay) / 0.2, 0.0, 1.0);
-        float fadeAlpha = smoothstep(0.0, 1.0, cellProgress);
-        intensity *= fadeAlpha;
+        intensity *= smoothstep(0.0, 1.0, cellProgress);
     }
     p = fract(p);
     p *= uDigitSize;
@@ -98,8 +85,9 @@ float digit(vec2 p){
     float n = i * i + j * j;
     float f = n * 0.0625;
     float isOn = step(0.1, intensity - f);
-    float brightness = isOn * (0.2 + y * 0.8) * (0.75 + x * 0.25);
-    return step(0.0, p.x) * step(p.x, 1.0) * step(0.0, p.y) * step(p.y, 1.0) * brightness;
+    float bright = isOn * (0.2 + y * 0.8) * (0.75 + x * 0.25);
+    float mask = step(0.0, p.x) * step(p.x, 1.0) * step(0.0, p.y) * step(p.y, 1.0);
+    return vec2(mask * bright, max(intensity, 0.0));
 }
 float onOff(float a, float b, float c){
   return step(c, sin(iTime + a * cos(iTime * b))) * uFlickerAmount;
@@ -115,15 +103,12 @@ vec3 getColor(vec2 p){
     float displacement = displace(p);
     p.x += displacement;
     if (uGlitchAmount != 1.0) {
-      float extra = displacement * (uGlitchAmount - 1.0);
-      p.x += extra;
+      p.x += displacement * (uGlitchAmount - 1.0);
     }
-    float middle = digit(p);
-    const float off = 0.002;
-    float sum = digit(p + vec2(-off, -off)) + digit(p + vec2(0.0, -off)) + digit(p + vec2(off, -off)) +
-                digit(p + vec2(-off, 0.0)) + digit(p + vec2(0.0, 0.0)) + digit(p + vec2(off, 0.0)) +
-                digit(p + vec2(-off, off)) + digit(p + vec2(0.0, off)) + digit(p + vec2(off, off));
-    vec3 baseColor = vec3(0.9) * middle + sum * 0.1 * vec3(1.0) * bar;
+    vec2 d = digit2(p);
+    // Analytic glow: scale by cell intensity, no extra digit() calls.
+    float glow = d.y * 0.9;
+    vec3 baseColor = vec3(0.9) * d.x + glow * 0.1 * bar;
     return baseColor;
 }
 vec2 barrel(vec2 uv){
@@ -160,40 +145,53 @@ function hexToRgb(hex) {
   return [((num >> 16) & 255) / 255, ((num >> 8) & 255) / 255, (num & 255) / 255];
 }
 
+function computeDpr(custom) {
+  if (typeof window === 'undefined') return 1;
+  if (typeof custom === 'number') return custom;
+  const raw = window.devicePixelRatio || 1;
+  const isMobile =
+    window.matchMedia?.('(pointer: coarse)').matches || window.innerWidth < 768;
+  return isMobile ? Math.min(raw, 1) : Math.min(raw, 1.5);
+}
+
 export default function FaultyTerminal({
   scale = 1, gridMul = [2, 1], digitSize = 1.5, timeScale = 0.3, pause = false,
   scanlineIntensity = 0.3, glitchAmount = 1, flickerAmount = 1, noiseAmp = 0,
   chromaticAberration = 0, dither = 0, curvature = 0.2, tint = '#ffffff',
-  mouseReact = true, mouseStrength = 0.2,
-  dpr = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1,
-  pageLoadAnimation = true, brightness = 1, className = '', style, ...rest
+  dpr, pageLoadAnimation = true, brightness = 1, className = '', style, ...rest
 }) {
   const containerRef = useRef(null);
-  const mouseRef = useRef({ x: 0.5, y: 0.5 });
-  const smoothMouseRef = useRef({ x: 0.5, y: 0.5 });
   const frozenTimeRef = useRef(0);
   const rafRef = useRef(0);
+  const visibleRef = useRef(true);
   const loadAnimationStartRef = useRef(0);
   const timeOffsetRef = useRef(Math.random() * 100);
   const tintVec = useMemo(() => hexToRgb(tint), [tint]);
   const ditherValue = useMemo(() => (typeof dither === 'boolean' ? (dither ? 1 : 0) : dither), [dither]);
+  const resolvedDpr = useMemo(() => computeDpr(dpr), [dpr]);
 
-  const handleMouseMove = useCallback(e => {
-    const ctn = containerRef.current;
-    if (!ctn) return;
-    const rect = ctn.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width;
-    const y = 1 - (e.clientY - rect.top) / rect.height;
-    mouseRef.current = { x, y };
-  }, []);
+  const noop = useCallback(() => {}, []);
+  void noop;
 
   useEffect(() => {
     const ctn = containerRef.current;
     if (!ctn) return;
-    const renderer = new Renderer({ dpr });
+    const renderer = new Renderer({ dpr: resolvedDpr, antialias: false });
     const gl = renderer.gl;
     gl.clearColor(0, 0, 0, 1);
     const geometry = new Triangle(gl);
+
+    // Pre-allocated rotation matrices (column-major for WebGL mat2).
+    const rotA = new Float32Array(4);
+    const rotB = new Float32Array(4);
+    const rotPat = new Float32Array(4);
+    const rotFixed = new Float32Array(4);
+    const setRot = (out, a) => {
+      const c = Math.cos(a), s = Math.sin(a);
+      out[0] = c; out[1] = s; out[2] = -s; out[3] = c;
+    };
+    setRot(rotFixed, 0.1);
+
     const program = new Program(gl, {
       vertex: vertexShader, fragment: fragmentShader,
       uniforms: {
@@ -210,64 +208,83 @@ export default function FaultyTerminal({
         uDither: { value: ditherValue },
         uCurvature: { value: curvature },
         uTint: { value: new Color(tintVec[0], tintVec[1], tintVec[2]) },
-        uMouse: { value: new Float32Array([smoothMouseRef.current.x, smoothMouseRef.current.y]) },
-        uMouseStrength: { value: mouseStrength },
-        uUseMouse: { value: mouseReact ? 1 : 0 },
         uPageLoadProgress: { value: pageLoadAnimation ? 0 : 1 },
         uUsePageLoadAnimation: { value: pageLoadAnimation ? 1 : 0 },
-        uBrightness: { value: brightness }
+        uBrightness: { value: brightness },
+        uRotA: { value: rotA },
+        uRotB: { value: rotB },
+        uRotPat: { value: rotPat },
+        uRotFixed: { value: rotFixed }
       }
     });
     const mesh = new Mesh(gl, { geometry, program });
+
     function resize() {
-      if (!ctn || !renderer) return;
+      if (!ctn) return;
       renderer.setSize(ctn.offsetWidth, ctn.offsetHeight);
-      program.uniforms.iResolution.value = new Color(gl.canvas.width, gl.canvas.height, gl.canvas.width / gl.canvas.height);
+      program.uniforms.iResolution.value = new Color(
+        gl.canvas.width, gl.canvas.height, gl.canvas.width / gl.canvas.height
+      );
     }
-    const resizeObserver = new ResizeObserver(() => resize());
+    const resizeObserver = new ResizeObserver(resize);
     resizeObserver.observe(ctn);
     resize();
+
+    // Pause render loop when offscreen (saves GPU on scroll).
+    const io = new IntersectionObserver(
+      entries => {
+        const wasVisible = visibleRef.current;
+        visibleRef.current = entries[0].isIntersecting;
+        if (!wasVisible && visibleRef.current && !rafRef.current) {
+          rafRef.current = requestAnimationFrame(update);
+        }
+      },
+      { threshold: 0.01 }
+    );
+    io.observe(ctn);
+
     const update = t => {
+      if (!visibleRef.current) {
+        rafRef.current = 0;
+        return;
+      }
       rafRef.current = requestAnimationFrame(update);
       if (pageLoadAnimation && loadAnimationStartRef.current === 0) loadAnimationStartRef.current = t;
+
+      let elapsed = frozenTimeRef.current;
       if (!pause) {
-        const elapsed = (t * 0.001 + timeOffsetRef.current) * timeScale;
-        program.uniforms.iTime.value = elapsed;
+        elapsed = (t * 0.001 + timeOffsetRef.current) * timeScale;
         frozenTimeRef.current = elapsed;
-      } else {
-        program.uniforms.iTime.value = frozenTimeRef.current;
       }
+      program.uniforms.iTime.value = elapsed;
+
+      // Update rotation matrices on the CPU once per frame.
+      const tt = elapsed * 0.333333;
+      setRot(rotA, tt * 0.02);
+      setRot(rotB, tt * 0.08);
+      setRot(rotPat, 0.1 * tt);
+
       if (pageLoadAnimation && loadAnimationStartRef.current > 0) {
-        const animationDuration = 2000;
-        const animationElapsed = t - loadAnimationStartRef.current;
-        const progress = Math.min(animationElapsed / animationDuration, 1);
+        const progress = Math.min((t - loadAnimationStartRef.current) / 2000, 1);
         program.uniforms.uPageLoadProgress.value = progress;
       }
-      if (mouseReact) {
-        const dampingFactor = 0.08;
-        const smoothMouse = smoothMouseRef.current;
-        const mouse = mouseRef.current;
-        smoothMouse.x += (mouse.x - smoothMouse.x) * dampingFactor;
-        smoothMouse.y += (mouse.y - smoothMouse.y) * dampingFactor;
-        const mouseUniform = program.uniforms.uMouse.value;
-        mouseUniform[0] = smoothMouse.x;
-        mouseUniform[1] = smoothMouse.y;
-      }
+
       renderer.render({ scene: mesh });
     };
     rafRef.current = requestAnimationFrame(update);
     ctn.appendChild(gl.canvas);
-    if (mouseReact) ctn.addEventListener('mousemove', handleMouseMove);
+
     return () => {
       cancelAnimationFrame(rafRef.current);
+      rafRef.current = 0;
+      io.disconnect();
       resizeObserver.disconnect();
-      if (mouseReact) ctn.removeEventListener('mousemove', handleMouseMove);
       if (gl.canvas.parentElement === ctn) ctn.removeChild(gl.canvas);
       gl.getExtension('WEBGL_lose_context')?.loseContext();
       loadAnimationStartRef.current = 0;
       timeOffsetRef.current = Math.random() * 100;
     };
-  }, [dpr, pause, timeScale, scale, gridMul, digitSize, scanlineIntensity, glitchAmount, flickerAmount, noiseAmp, chromaticAberration, ditherValue, curvature, tintVec, mouseReact, mouseStrength, pageLoadAnimation, brightness, handleMouseMove]);
+  }, [resolvedDpr, pause, timeScale, scale, gridMul, digitSize, scanlineIntensity, glitchAmount, flickerAmount, noiseAmp, chromaticAberration, ditherValue, curvature, tintVec, pageLoadAnimation, brightness]);
 
   return <div ref={containerRef} className={`faulty-terminal-container ${className}`} style={style} {...rest} />;
 }
