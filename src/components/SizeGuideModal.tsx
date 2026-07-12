@@ -38,7 +38,7 @@ export default function SizeGuideModal({
             exit={{ y: 20, opacity: 0, scale: 0.97 }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
             onClick={(e) => e.stopPropagation()}
-            className="bg-white text-black w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 md:p-10 border border-black relative"
+            className="bg-white text-black w-full max-w-5xl max-h-[92vh] overflow-y-auto p-6 md:p-10 border border-black relative"
           >
             <button
               onClick={onClose}
@@ -74,16 +74,16 @@ export default function SizeGuideModal({
               </div>
             </div>
 
-            <div className="mt-8 grid sm:grid-cols-2 gap-4">
+            <div className="mt-10 grid md:grid-cols-2 gap-6">
               <figure>
                 <img
                   src={sizeFront.url}
                   alt="Medidas frontales de la camisa talla XL"
                   loading="lazy"
                   decoding="async"
-                  className="w-full h-auto border border-black bg-white"
+                  className="w-full h-auto max-h-[70vh] object-contain border border-black bg-white"
                 />
-                <figcaption className="mt-2 text-xs tracking-[0.2em] uppercase text-neutral-600">
+                <figcaption className="mt-3 text-sm tracking-[0.2em] uppercase text-neutral-600">
                   Frente
                 </figcaption>
               </figure>
@@ -93,9 +93,9 @@ export default function SizeGuideModal({
                   alt="Medidas traseras de la camisa talla XL"
                   loading="lazy"
                   decoding="async"
-                  className="w-full h-auto border border-black bg-white"
+                  className="w-full h-auto max-h-[70vh] object-contain border border-black bg-white"
                 />
-                <figcaption className="mt-2 text-xs tracking-[0.2em] uppercase text-neutral-600">
+                <figcaption className="mt-3 text-sm tracking-[0.2em] uppercase text-neutral-600">
                   Espalda
                 </figcaption>
               </figure>
