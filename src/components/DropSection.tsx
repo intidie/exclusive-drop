@@ -128,25 +128,3 @@ export default function DropSection() {
   );
 }
 
-function StockIndicator({ stock, total }: { stock: number; total: number }) {
-  const pct = (stock / total) * 100;
-  return (
-    <div>
-      <div className="flex justify-between text-xs tracking-[0.2em] uppercase mb-2">
-        <span>Stock</span>
-        <span>
-          Solo {stock}/{total} restantes
-        </span>
-      </div>
-      <div className="h-px w-full bg-neutral-200 relative">
-        <motion.div
-          className="absolute left-0 top-0 h-px bg-black"
-          initial={{ width: 0 }}
-          whileInView={{ width: `${pct}%` }}
-          viewport={{ once: true }}
-          transition={{ duration: 1.2, ease: "easeOut" }}
-        />
-      </div>
-    </div>
-  );
-}
