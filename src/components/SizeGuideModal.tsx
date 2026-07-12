@@ -74,16 +74,16 @@ export default function SizeGuideModal({
               </div>
             </div>
 
-            <div className="mt-8 grid sm:grid-cols-2 gap-4">
+            <div className="mt-10 grid md:grid-cols-2 gap-6">
               <figure>
                 <img
                   src={sizeFront.url}
                   alt="Medidas frontales de la camisa talla XL"
                   loading="lazy"
                   decoding="async"
-                  className="w-full h-auto border border-black bg-white"
+                  className="w-full h-auto max-h-[70vh] object-contain border border-black bg-white"
                 />
-                <figcaption className="mt-2 text-xs tracking-[0.2em] uppercase text-neutral-600">
+                <figcaption className="mt-3 text-sm tracking-[0.2em] uppercase text-neutral-600">
                   Frente
                 </figcaption>
               </figure>
@@ -93,9 +93,9 @@ export default function SizeGuideModal({
                   alt="Medidas traseras de la camisa talla XL"
                   loading="lazy"
                   decoding="async"
-                  className="w-full h-auto border border-black bg-white"
+                  className="w-full h-auto max-h-[70vh] object-contain border border-black bg-white"
                 />
-                <figcaption className="mt-2 text-xs tracking-[0.2em] uppercase text-neutral-600">
+                <figcaption className="mt-3 text-sm tracking-[0.2em] uppercase text-neutral-600">
                   Espalda
                 </figcaption>
               </figure>
