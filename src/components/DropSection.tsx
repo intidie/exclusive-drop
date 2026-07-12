@@ -64,7 +64,13 @@ export default function DropSection() {
       <motion.article {...fadeUp} className="max-w-6xl mx-auto grid md:grid-cols-2 gap-8 md:gap-16 items-start">
         <div className="grid grid-cols-1 gap-4">
           {p.images.map((src, i) => (
-            <ProductZoom key={i} src={src} alt={`${p.name} vista ${i + 1}`} eager={i === 0} />
+            <ProductZoom
+              key={i}
+              src={src}
+              alt={`${p.name} vista ${i + 1}`}
+              eager={i === 0}
+              fit={i === 0 ? "contain" : "cover"}
+            />
           ))}
         </div>
 
