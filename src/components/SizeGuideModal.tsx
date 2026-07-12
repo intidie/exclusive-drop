@@ -1,6 +1,8 @@
 import { motion, AnimatePresence } from "motion/react";
 import { useEffect } from "react";
 import { SIZE_GUIDE } from "@/lib/drop-data";
+import sizeFront from "@/assets/size-front.png.asset.json";
+import sizeBack from "@/assets/size-back.png.asset.json";
 
 export default function SizeGuideModal({
   open,
