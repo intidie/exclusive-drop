@@ -89,7 +89,9 @@ export default function DropSection() {
             </p>
           </div>
 
-          <StockIndicator stock={p.stock} total={DROP.totalUnits} />
+          <p className="text-xs tracking-[0.2em] uppercase text-neutral-600">
+            Disponibilidad ilimitada
+          </p>
 
           <div>
             <div className="flex items-center justify-between mb-3">
