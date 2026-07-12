@@ -1,4 +1,4 @@
-import shirtWolf from "@/assets/shirt-wolf.asset.json";
+import shirtFront from "@/assets/shirt-front.png.asset.json";
 import shirtLiveLeak from "@/assets/shirt-liveleak.asset.json";
 
 export const DROP = {
@@ -7,9 +7,10 @@ export const DROP = {
   product: {
     id: "inti-machine-girl",
     name: "INTI(t) DROP MACHINE GIRL",
-    price: 120000,
+    price: 75999,
+    originalPrice: 87999,
     currency: "COP",
-    images: [shirtWolf.url, shirtLiveLeak.url],
+    images: [shirtFront.url, shirtLiveLeak.url],
     stock: 6,
     sizes: ["Única"],
   },
