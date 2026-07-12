@@ -38,7 +38,7 @@ export default function SizeGuideModal({
             exit={{ y: 20, opacity: 0, scale: 0.97 }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
             onClick={(e) => e.stopPropagation()}
-            className="bg-white text-black w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 md:p-10 border border-black relative"
+            className="bg-white text-black w-full max-w-5xl max-h-[92vh] overflow-y-auto p-6 md:p-10 border border-black relative"
           >
             <button
               onClick={onClose}
