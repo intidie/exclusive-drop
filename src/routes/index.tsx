@@ -27,7 +27,7 @@ export const Route = createFileRoute("/")({
     links: [
       { rel: "icon", href: "/favicon.png" },
       // Preload LCP product image so it's hot once the user scrolls.
-      { rel: "preload", as: "image", href: shirtWolf.url, fetchpriority: "high" },
+      { rel: "preload", as: "image", href: shirtFront.url, fetchpriority: "high" },
     ],
   }),
   component: Index,
