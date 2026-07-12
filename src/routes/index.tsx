@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { lazy, Suspense, useState } from "react";
 import LoadingScreen from "@/components/LoadingScreen";
 import Hero from "@/components/Hero";
-import shirtWolf from "@/assets/shirt-wolf.asset.json";
+import shirtFront from "@/assets/shirt-front.png.asset.json";
 
 const AdultsOnlySection = lazy(() => import("@/components/AdultsOnlySection"));
 const DropSection = lazy(() => import("@/components/DropSection"));
