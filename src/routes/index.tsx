@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { lazy, Suspense, useState } from "react";
 import LoadingScreen from "@/components/LoadingScreen";
 import Hero from "@/components/Hero";
-import shirtWolf from "@/assets/shirt-wolf.asset.json";
+import shirtFront from "@/assets/shirt-front.png.asset.json";
 
 const AdultsOnlySection = lazy(() => import("@/components/AdultsOnlySection"));
 const DropSection = lazy(() => import("@/components/DropSection"));
@@ -27,7 +27,7 @@ export const Route = createFileRoute("/")({
     links: [
       { rel: "icon", href: "/favicon.png" },
       // Preload LCP product image so it's hot once the user scrolls.
-      { rel: "preload", as: "image", href: shirtWolf.url, fetchpriority: "high" },
+      { rel: "preload", as: "image", href: shirtFront.url, fetchpriority: "high" },
     ],
   }),
   component: Index,

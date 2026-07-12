@@ -1,6 +1,8 @@
 import { motion, AnimatePresence } from "motion/react";
 import { useEffect } from "react";
 import { SIZE_GUIDE } from "@/lib/drop-data";
+import sizeFront from "@/assets/size-front.png.asset.json";
+import sizeBack from "@/assets/size-back.png.asset.json";
 
 export default function SizeGuideModal({
   open,
@@ -70,6 +72,33 @@ export default function SizeGuideModal({
                   </div>
                 ))}
               </div>
+            </div>
+
+            <div className="mt-8 grid sm:grid-cols-2 gap-4">
+              <figure>
+                <img
+                  src={sizeFront.url}
+                  alt="Medidas frontales de la camisa talla XL"
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-auto border border-black bg-white"
+                />
+                <figcaption className="mt-2 text-xs tracking-[0.2em] uppercase text-neutral-600">
+                  Frente
+                </figcaption>
+              </figure>
+              <figure>
+                <img
+                  src={sizeBack.url}
+                  alt="Medidas traseras de la camisa talla XL"
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-auto border border-black bg-white"
+                />
+                <figcaption className="mt-2 text-xs tracking-[0.2em] uppercase text-neutral-600">
+                  Espalda
+                </figcaption>
+              </figure>
             </div>
 
             <p className="mt-6 text-xs text-neutral-500">

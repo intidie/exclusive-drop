@@ -57,7 +57,7 @@ export default function DropSection() {
         <p className="text-xs tracking-[0.3em] uppercase mb-3">El Drop</p>
         <h2 className="text-4xl md:text-6xl font-black tracking-tight">{DROP.name}</h2>
         <p className="mt-4 text-sm md:text-base text-neutral-600 max-w-xl">
-          Edición limitada de {DROP.totalUnits} unidades en total. Una vez agotadas, no se reimprimen.
+          Disponibilidad ilimitada — hecho a demanda.
         </p>
       </motion.div>
 
@@ -72,14 +72,26 @@ export default function DropSection() {
         <div className="flex flex-col gap-6 md:sticky md:top-10">
           <div>
             <h3 className="text-2xl md:text-4xl font-black tracking-tight">{p.name}</h3>
-            <p className="mt-2 text-lg font-semibold">{formatCOP(p.price)}</p>
-            <p className="text-sm text-neutral-600">
+            <div className="mt-2 flex items-baseline gap-3">
+              <span className="text-base text-neutral-400 line-through">
+                {formatCOP(p.originalPrice)}
+              </span>
+              <span className="text-[10px] tracking-[0.3em] uppercase bg-red-600 text-white px-2 py-0.5">
+                Oferta
+              </span>
+            </div>
+            <p className="mt-1 text-4xl md:text-5xl font-black tracking-tight animate-price-flash">
+              {formatCOP(p.price)}
+            </p>
+            <p className="text-sm text-neutral-600 mt-1">
               ≈ {formatUSD(Math.round(p.price / USD_TRM))} USD{" "}
               <span className="text-xs opacity-60">(TRM {formatCOP(USD_TRM)}/USD)</span>
             </p>
           </div>
 
-          <StockIndicator stock={p.stock} total={DROP.totalUnits} />
+          <p className="text-xs tracking-[0.2em] uppercase text-neutral-600">
+            Disponibilidad ilimitada
+          </p>
 
           <div>
             <div className="flex items-center justify-between mb-3">
@@ -116,25 +128,3 @@ export default function DropSection() {
   );
 }
 
-function StockIndicator({ stock, total }: { stock: number; total: number }) {
-  const pct = (stock / total) * 100;
-  return (
-    <div>
-      <div className="flex justify-between text-xs tracking-[0.2em] uppercase mb-2">
-        <span>Stock</span>
-        <span>
-          Solo {stock}/{total} restantes
-        </span>
-      </div>
-      <div className="h-px w-full bg-neutral-200 relative">
-        <motion.div
-          className="absolute left-0 top-0 h-px bg-black"
-          initial={{ width: 0 }}
-          whileInView={{ width: `${pct}%` }}
-          viewport={{ once: true }}
-          transition={{ duration: 1.2, ease: "easeOut" }}
-        />
-      </div>
-    </div>
-  );
-}
