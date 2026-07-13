@@ -11,19 +11,21 @@ export default function ProductZoom({
   alt,
   eager = false,
   fit = "cover",
+  zoom = true,
 }: {
   src: string;
   alt: string;
   eager?: boolean;
   fit?: "cover" | "contain";
+  zoom?: boolean;
 }) {
   const [errored, setErrored] = useState(false);
 
   return (
     <div
-      className={`group relative w-full overflow-hidden bg-neutral-100 cursor-zoom-in ${
-        fit === "contain" ? "aspect-square" : "aspect-[4/5]"
-      }`}
+      className={`group relative w-full overflow-hidden bg-neutral-100 ${
+        zoom ? "cursor-zoom-in" : ""
+      } ${fit === "contain" ? "aspect-square" : "aspect-[4/5]"}`}
     >
       <img
         src={errored ? FALLBACK : src}
@@ -34,10 +36,10 @@ export default function ProductZoom({
         decoding="async"
         draggable={false}
         onError={() => setErrored(true)}
-        className={`w-full h-full select-none transition-transform duration-500 ease-out group-hover:scale-[1.6] ${
-          fit === "contain" ? "object-contain" : "object-cover"
-        }`}
-        style={{ willChange: "transform" }}
+        className={`w-full h-full select-none ${
+          zoom ? "transition-transform duration-500 ease-out group-hover:scale-[1.6]" : ""
+        } ${fit === "contain" ? "object-contain" : "object-cover"}`}
+        style={zoom ? { willChange: "transform" } : undefined}
       />
     </div>
   );
