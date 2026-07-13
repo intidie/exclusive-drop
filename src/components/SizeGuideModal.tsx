@@ -78,14 +78,14 @@ export default function SizeGuideModal({
               </div>
             </div>
 
-            <div className="mt-10 grid md:grid-cols-2 gap-6">
+            <div className="mt-10 flex flex-col gap-8">
               <figure>
                 <img
                   src={sizeFront.url}
                   alt="Medidas frontales de la camisa talla XL"
                   loading="lazy"
                   decoding="async"
-                  className="w-full h-auto max-h-[70vh] object-contain border border-black bg-white"
+                  className="w-full h-auto object-contain border border-black bg-white"
                 />
                 <figcaption className="mt-3 text-sm tracking-[0.2em] uppercase text-neutral-600">
                   Frente
@@ -97,7 +97,7 @@ export default function SizeGuideModal({
                   alt="Medidas traseras de la camisa talla XL"
                   loading="lazy"
                   decoding="async"
-                  className="w-full h-auto max-h-[70vh] object-contain border border-black bg-white"
+                  className="w-full h-auto object-contain border border-black bg-white"
                 />
                 <figcaption className="mt-3 text-sm tracking-[0.2em] uppercase text-neutral-600">
                   Espalda
@@ -108,6 +108,7 @@ export default function SizeGuideModal({
             <p className="mt-6 text-xs text-neutral-500">
               ±1cm de tolerancia. Para dudas, escríbenos por WhatsApp antes de apartar.
             </p>
+            </div>
           </motion.div>
         </motion.div>
       )}
