@@ -1,6 +1,7 @@
 import { motion } from "motion/react";
 import { useState } from "react";
-import { DROP, waLink } from "@/lib/drop-data";
+import { DROP, waLink, CONTACT } from "@/lib/drop-data";
+import CountdownTimer from "./CountdownTimer";
 import ProductZoom from "./ProductZoom";
 import SizeGuideModal from "./SizeGuideModal";
 import shirtGif from "@/assets/camisa-3d.gif.asset.json";
@@ -78,13 +79,14 @@ export default function DropSection() {
         <div className="flex flex-col gap-6 md:sticky md:top-10">
           <div>
             <h3 className="text-2xl md:text-4xl font-black tracking-tight">{p.name}</h3>
-            <div className="mt-2 flex items-baseline gap-3">
+            <div className="mt-2 flex items-baseline gap-3 flex-wrap">
               <span className="text-base text-neutral-400 line-through">
                 {formatCOP(p.originalPrice)}
               </span>
               <span className="text-[10px] tracking-[0.3em] uppercase bg-red-600 text-white px-2 py-0.5">
                 Oferta
               </span>
+              <CountdownTimer />
             </div>
             <p className="mt-1 text-4xl md:text-5xl font-black tracking-tight animate-price-flash">
               {formatCOP(p.price)}
@@ -93,10 +95,18 @@ export default function DropSection() {
               ≈ {formatUSD(Math.round(p.price / USD_TRM))} USD{" "}
               <span className="text-xs opacity-60">(TRM {formatCOP(USD_TRM)}/USD)</span>
             </p>
+            <a
+              href={`https://www.instagram.com/${CONTACT.instagramHandle.replace("@", "")}/`}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-4 inline-flex items-center justify-center h-11 px-5 text-xs tracking-[0.2em] uppercase font-semibold border border-black bg-white text-black hover:bg-black hover:text-white transition-colors"
+            >
+              Pedir descuento · Sigue {CONTACT.instagramHandle}
+            </a>
           </div>
 
           <p className="text-xs tracking-[0.2em] uppercase text-neutral-600">
-            Disponibilidad ilimitada
+            Edición limitada · {DROP.totalUnits} camisas totales · Quedan {DROP.available} disponibles
           </p>
 
           <div>
@@ -109,13 +119,19 @@ export default function DropSection() {
                 Guía de tallas
               </button>
             </div>
-            <div className="inline-flex items-center justify-center h-12 px-6 border border-black text-sm font-medium bg-black text-white">
-              Talla Única (Oversize)
+            <div className="flex flex-wrap gap-2">
+              <div className="inline-flex items-center justify-center h-12 px-6 border border-black text-sm font-medium bg-black text-white">
+                XL (Oversize)
+              </div>
+              <div className="inline-flex items-center justify-center h-12 px-6 border border-black text-sm font-medium bg-neutral-100 text-neutral-400 line-through">
+                XXL · Agotado
+              </div>
             </div>
           </div>
 
+
           <a
-            href={waLink(`Producto: ${p.name} — Talla Única`)}
+            href={waLink(`Producto: ${p.name} — Talla XL`)}
             target="_blank"
             rel="noreferrer"
             className={`inline-flex items-center justify-center h-14 px-8 text-sm tracking-[0.2em] uppercase font-semibold transition-all duration-300 ${
