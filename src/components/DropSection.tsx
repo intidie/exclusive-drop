@@ -58,7 +58,7 @@ export default function DropSection() {
         <p className="text-xs tracking-[0.3em] uppercase mb-3">El Drop</p>
         <h2 className="text-4xl md:text-6xl font-black tracking-tight">{DROP.name}</h2>
         <p className="mt-4 text-sm md:text-base text-neutral-600 max-w-xl">
-          Disponibilidad ilimitada — hecho a demanda.
+          Drop limitado y único — pocas unidades disponibles.
         </p>
       </motion.div>
 
@@ -71,6 +71,7 @@ export default function DropSection() {
               alt={`${p.name} vista ${i + 1}`}
               eager={i === 0}
               fit={i === 0 ? "contain" : "cover"}
+              zoom={i === 0}
             />
           ))}
         </div>
