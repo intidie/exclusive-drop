@@ -38,15 +38,19 @@ export default function SizeGuideModal({
             exit={{ y: 20, opacity: 0, scale: 0.97 }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
             onClick={(e) => e.stopPropagation()}
-            className="bg-white text-black w-full max-w-5xl max-h-[92vh] overflow-y-auto p-6 md:p-10 border border-black relative"
+            className="bg-white text-black w-full max-w-5xl max-h-[92vh] overflow-y-auto border border-black relative"
           >
-            <button
-              onClick={onClose}
-              aria-label="Cerrar"
-              className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center border border-black hover:bg-black hover:text-white transition-colors"
-            >
-              ×
-            </button>
+            <div className="sticky top-0 z-10 flex justify-end p-2 bg-white border-b border-black/10">
+              <button
+                onClick={onClose}
+                aria-label="Cerrar"
+                type="button"
+                className="w-11 h-11 flex items-center justify-center border border-black text-2xl leading-none active:bg-black active:text-white hover:bg-black hover:text-white transition-colors"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-6 md:p-10 pt-4">
             <p className="text-[10px] tracking-[0.3em] uppercase opacity-60">Guía</p>
             <h3 className="text-2xl md:text-4xl font-black tracking-tight mt-1">
               Tallas — Medidas en cm
