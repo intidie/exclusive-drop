@@ -131,7 +131,7 @@ export default function DropSection() {
 
 
           <a
-            href={waLink(`Producto: ${p.name} — Talla Única`)}
+            href={waLink(`Producto: ${p.name} — Talla XL`)}
             target="_blank"
             rel="noreferrer"
             className={`inline-flex items-center justify-center h-14 px-8 text-sm tracking-[0.2em] uppercase font-semibold transition-all duration-300 ${
