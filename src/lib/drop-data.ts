@@ -4,15 +4,17 @@ import shirtLiveLeak from "@/assets/shirt-liveleak.asset.json";
 export const DROP = {
   name: "Drop Único — LIVE LEAKS by INTI(t)",
   totalUnits: 6,
+  available: 4,
+  soldOutSizes: ["XXL"],
   product: {
     id: "inti-machine-girl",
     name: "INTI(t) DROP MACHINE GIRL",
-    price: 75999,
+    price: 74999,
     originalPrice: 87999,
     currency: "COP",
     images: [shirtFront.url, shirtLiveLeak.url],
-    stock: 6,
-    sizes: ["Única"],
+    stock: 4,
+    sizes: ["XL"],
   },
 };
 
