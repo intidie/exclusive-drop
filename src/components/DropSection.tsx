@@ -4,6 +4,7 @@ import { DROP, waLink, CONTACT } from "@/lib/drop-data";
 import CountdownTimer from "./CountdownTimer";
 import ProductZoom from "./ProductZoom";
 import SizeGuideModal from "./SizeGuideModal";
+import NequiCheckoutModal from "./NequiCheckoutModal";
 import shirtGif from "@/assets/camisa-3d.gif.asset.json";
 
 const USD_TRM = 4000;
