@@ -4,6 +4,7 @@ import { DROP, waLink, CONTACT } from "@/lib/drop-data";
 import CountdownTimer from "./CountdownTimer";
 import ProductZoom from "./ProductZoom";
 import SizeGuideModal from "./SizeGuideModal";
+import NequiCheckoutModal from "./NequiCheckoutModal";
 import shirtGif from "@/assets/camisa-3d.gif.asset.json";
 
 const USD_TRM = 4000;
@@ -34,6 +35,7 @@ function formatUSD(n: number) {
 export default function DropSection() {
   const p = DROP.product;
   const [guideOpen, setGuideOpen] = useState(false);
+  const [nequiOpen, setNequiOpen] = useState(false);
   const soldOut = p.stock === 0;
 
   return (
@@ -70,8 +72,9 @@ export default function DropSection() {
               src={src}
               alt={`${p.name} vista ${i + 1}`}
               eager={i === 0}
-              fit={i === 0 ? "contain" : "cover"}
-              zoom={i === 0}
+              fit="contain"
+              zoom
+              zoomOrigin={i === 1 ? "top" : "center"}
             />
           ))}
         </div>
@@ -131,22 +134,37 @@ export default function DropSection() {
           </div>
 
 
-          <a
-            href={waLink(`Producto: ${p.name} — Talla XL`)}
-            target="_blank"
-            rel="noreferrer"
-            className={`inline-flex items-center justify-center h-14 px-8 text-sm tracking-[0.2em] uppercase font-semibold transition-all duration-300 ${
-              soldOut
-                ? "bg-neutral-200 text-neutral-500 cursor-not-allowed pointer-events-none"
-                : "bg-black text-white hover:bg-white hover:text-black border border-black"
-            }`}
-          >
-            {soldOut ? "Agotado" : "Apartar por WhatsApp"}
-          </a>
+          <div className="flex flex-col gap-3">
+            <button
+              type="button"
+              disabled={soldOut}
+              onClick={() => setNequiOpen(true)}
+              className={`inline-flex items-center justify-center h-14 px-8 text-sm tracking-[0.2em] uppercase font-semibold transition-all duration-300 ${
+                soldOut
+                  ? "bg-neutral-200 text-neutral-500 cursor-not-allowed"
+                  : "bg-[#da0081] text-white hover:bg-black border border-[#da0081] hover:border-black"
+              }`}
+            >
+              {soldOut ? "Agotado" : "Pagar con Nequi"}
+            </button>
+            <a
+              href={waLink(`Producto: ${p.name} — Talla XL`)}
+              target="_blank"
+              rel="noreferrer"
+              className={`inline-flex items-center justify-center h-14 px-8 text-sm tracking-[0.2em] uppercase font-semibold transition-all duration-300 ${
+                soldOut
+                  ? "bg-neutral-200 text-neutral-500 cursor-not-allowed pointer-events-none"
+                  : "bg-black text-white hover:bg-white hover:text-black border border-black"
+              }`}
+            >
+              {soldOut ? "Agotado" : "Apartar por WhatsApp"}
+            </a>
+          </div>
         </div>
       </motion.article>
 
       <SizeGuideModal open={guideOpen} onClose={() => setGuideOpen(false)} />
+      <NequiCheckoutModal open={nequiOpen} onClose={() => setNequiOpen(false)} />
     </section>
   );
 }
