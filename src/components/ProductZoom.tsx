@@ -12,14 +12,23 @@ export default function ProductZoom({
   eager = false,
   fit = "cover",
   zoom = true,
+  zoomOrigin = "center",
 }: {
   src: string;
   alt: string;
   eager?: boolean;
   fit?: "cover" | "contain";
   zoom?: boolean;
+  zoomOrigin?: "center" | "top" | "bottom";
 }) {
   const [errored, setErrored] = useState(false);
+
+  const originClass =
+    zoomOrigin === "top"
+      ? "origin-top"
+      : zoomOrigin === "bottom"
+        ? "origin-bottom"
+        : "origin-center";
 
   return (
     <div
@@ -37,7 +46,9 @@ export default function ProductZoom({
         draggable={false}
         onError={() => setErrored(true)}
         className={`w-full h-full select-none ${
-          zoom ? "transition-transform duration-500 ease-out group-hover:scale-[1.6]" : ""
+          zoom
+            ? `transition-transform duration-500 ease-out group-hover:scale-[1.6] ${originClass}`
+            : ""
         } ${fit === "contain" ? "object-contain" : "object-cover"}`}
         style={zoom ? { willChange: "transform" } : undefined}
       />
