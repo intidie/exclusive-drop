@@ -35,6 +35,7 @@ function formatUSD(n: number) {
 export default function DropSection() {
   const p = DROP.product;
   const [guideOpen, setGuideOpen] = useState(false);
+  const [nequiOpen, setNequiOpen] = useState(false);
   const soldOut = p.stock === 0;
 
   return (
