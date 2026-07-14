@@ -70,8 +70,9 @@ export default function DropSection() {
               src={src}
               alt={`${p.name} vista ${i + 1}`}
               eager={i === 0}
-              fit={i === 0 ? "contain" : "cover"}
-              zoom={i === 0}
+              fit="contain"
+              zoom
+              zoomOrigin={i === 1 ? "top" : "center"}
             />
           ))}
         </div>
