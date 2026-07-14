@@ -30,6 +30,8 @@ export const CONTACT = {
   whatsappNumber: "573006865256",
   whatsappDisplay: "+57 300 686 5256",
   whatsappMessage: "Hola! Quiero apartar una camisa del drop LIVE LEAKS by INTI(t).",
+  nequiNumber: "3006865256",
+  nequiHolder: "INTI(t)",
 };
 
 export const waLink = (extra = "") =>
