@@ -5,7 +5,7 @@ import Hero from "@/components/Hero";
 import shirtFront from "@/assets/shirt-front.png.asset.json";
 
 const AdultsOnlySection = lazy(() => import("@/components/AdultsOnlySection"));
-const DropSection = lazy(() => import("@/components/DropSection"));
+const CatalogSection = lazy(() => import("@/components/CatalogSection"));
 const DropBySection = lazy(() => import("@/components/DropBySection"));
 const CheckoutSection = lazy(() => import("@/components/CheckoutSection"));
 const TermsSection = lazy(() => import("@/components/TermsSection"));
