@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useState } from "react";
-import { getProduct, PRODUCTS, PRICE, ORIGINAL_PRICE, USD_TRM, SIZES, CONTACT, waLink } from "@/lib/drop-data";
+import { getProduct, PRODUCTS, PRICE, ORIGINAL_PRICE, USD_TRM, SIZES, CONTACT, waLink, PRINT_SPEC } from "@/lib/drop-data";
 import CountdownTimer from "@/components/CountdownTimer";
 import SizeGuideModal from "@/components/SizeGuideModal";
 
@@ -91,6 +91,11 @@ function ProductPage() {
           </div>
 
           <p className="text-sm text-neutral-700 leading-relaxed">{product.description}</p>
+
+          <p className="text-xs tracking-[0.15em] uppercase font-semibold border border-black/15 px-3 py-2">
+            {PRINT_SPEC}
+          </p>
+
 
           <div>
             <div className="flex items-center justify-between mb-3">
