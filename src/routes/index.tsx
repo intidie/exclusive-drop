@@ -43,7 +43,7 @@ function Index() {
       <Hero start={loaderGone} />
       <Suspense fallback={null}>
         <AdultsOnlySection />
-        <DropSection />
+        <CatalogSection />
         <DropBySection />
         <CheckoutSection />
         <TermsSection />
