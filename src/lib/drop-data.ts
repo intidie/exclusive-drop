@@ -1,6 +1,10 @@
 export const SIZES = ["S", "M", "L", "XL", "XXL"];
 
+export const PRINT_SPEC =
+  "Estampado en DTF máxima calidad. No le salen motas, máxima calidad.";
+
 export const PRICE = 74999;
+
 export const ORIGINAL_PRICE = 87999;
 export const USD_TRM = 4000;
 
