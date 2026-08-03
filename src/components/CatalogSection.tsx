@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
 import { PRODUCTS, PRICE } from "@/lib/drop-data";
+import intiNetLogo from "@/assets/inti-net-logo.png.asset.json";
 
 const formatCOP = (n: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
@@ -14,16 +15,20 @@ export default function CatalogSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-12 md:mb-16"
+          className="mb-12 md:mb-16 flex flex-col items-center text-center gap-6"
         >
-          <p className="text-xs tracking-[0.3em] uppercase mb-3">El Drop</p>
-          <h2 className="text-4xl md:text-6xl font-black tracking-tight">
-            LIVE LEAKS by INTI(t)
+          <h2 className="text-3xl md:text-5xl font-black tracking-tight uppercase">
+            prohibido gente npc
           </h2>
-          <p className="mt-4 text-sm md:text-base text-neutral-600 max-w-xl">
-            Drop limitado y único — 5 piezas, todas las tallas disponibles.
-          </p>
+          <img
+            src={intiNetLogo.url}
+            alt="inti-net"
+            loading="lazy"
+            decoding="async"
+            className="w-full max-w-md md:max-w-lg"
+          />
         </motion.div>
+
 
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {PRODUCTS.map((p, i) => (
