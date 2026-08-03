@@ -57,7 +57,7 @@ function ProductPage() {
 
       <article className="max-w-6xl mx-auto px-6 py-10 md:py-16 grid md:grid-cols-2 gap-8 md:gap-16 items-start">
         <div className="grid gap-4">
-          {product.images.map((src, i) => (
+          {product.images.map((src: string, i: number) => (
             <div key={src} className="aspect-[4/5] overflow-hidden bg-neutral-100 group cursor-zoom-in">
               <img
                 src={src}
