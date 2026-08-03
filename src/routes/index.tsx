@@ -2,10 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { lazy, Suspense, useState } from "react";
 import LoadingScreen from "@/components/LoadingScreen";
 import Hero from "@/components/Hero";
-import shirtFront from "@/assets/shirt-front.png.asset.json";
 
 const AdultsOnlySection = lazy(() => import("@/components/AdultsOnlySection"));
-const DropSection = lazy(() => import("@/components/DropSection"));
+const CatalogSection = lazy(() => import("@/components/CatalogSection"));
 const DropBySection = lazy(() => import("@/components/DropBySection"));
 const CheckoutSection = lazy(() => import("@/components/CheckoutSection"));
 const TermsSection = lazy(() => import("@/components/TermsSection"));
@@ -19,15 +18,16 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Drop exclusivo de camisas LIVE LEAKS by INTI(t). Edición limitada de 6 unidades. Pago por Nequi o contraentrega.",
+          "Drop exclusivo de camisas LIVE LEAKS by INTI(t). 5 piezas, todas las tallas. Pagos locales, internacionales y cripto.",
       },
       { property: "og:title", content: "LIVE LEAKS by INTI(t) — Drop único" },
-      { property: "og:description", content: "Drop exclusivo de camisas. Edición limitada de 6 unidades." },
+      { property: "og:description", content: "Drop exclusivo de camisas. 5 piezas, edición limitada." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
       { rel: "icon", href: "/favicon.png" },
-      // Preload LCP product image so it's hot once the user scrolls.
-      { rel: "preload", as: "image", href: shirtFront.url, fetchpriority: "high" },
+      { rel: "preload", as: "image", href: "/images/machine_girl.webp", fetchpriority: "high" },
     ],
   }),
   component: Index,
@@ -43,7 +43,7 @@ function Index() {
       <Hero start={loaderGone} />
       <Suspense fallback={null}>
         <AdultsOnlySection />
-        <DropSection />
+        <CatalogSection />
         <DropBySection />
         <CheckoutSection />
         <TermsSection />

@@ -77,6 +77,20 @@ export default function Hero({ start = true }: { start?: boolean }) {
           DROP BY INTI(t)
         </motion.p>
       </div>
+
+      <motion.a
+        href="#drop"
+        initial={{ opacity: 0 }}
+        animate={start ? { opacity: 1 } : {}}
+        transition={{ duration: 0.4, delay: 0.6 }}
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1 text-white/80 hover:text-white transition-colors"
+        style={{ textShadow: "0 0 8px #000" }}
+      >
+        <span className="text-[10px] tracking-[0.35em] uppercase font-mono">
+          Baja para más información
+        </span>
+        <span className="animate-bounce text-sm leading-none">↓</span>
+      </motion.a>
     </section>
   );
 }

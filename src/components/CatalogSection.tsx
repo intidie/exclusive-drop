@@ -1,0 +1,58 @@
+import { Link } from "@tanstack/react-router";
+import { motion } from "motion/react";
+import { PRODUCTS, PRICE } from "@/lib/drop-data";
+
+const formatCOP = (n: number) =>
+  new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
+
+export default function CatalogSection() {
+  return (
+    <section id="drop" className="bg-white text-black py-24 md:py-32 px-6">
+      <div className="max-w-6xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className="mb-12 md:mb-16"
+        >
+          <p className="text-xs tracking-[0.3em] uppercase mb-3">El Drop</p>
+          <h2 className="text-4xl md:text-6xl font-black tracking-tight">
+            LIVE LEAKS by INTI(t)
+          </h2>
+          <p className="mt-4 text-sm md:text-base text-neutral-600 max-w-xl">
+            Drop limitado y único — 5 piezas, todas las tallas disponibles.
+          </p>
+        </motion.div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          {PRODUCTS.map((p, i) => (
+            <Link
+              key={p.slug}
+              to="/producto/$slug"
+              params={{ slug: p.slug }}
+              className="group block border border-black/10 hover:border-black transition-colors"
+            >
+              <div className="aspect-[4/5] overflow-hidden bg-neutral-100">
+                <img
+                  src={p.image}
+                  alt={p.name}
+                  width={1200}
+                  height={1500}
+                  loading={i < 2 ? "eager" : "lazy"}
+                  decoding="async"
+                  className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                />
+              </div>
+              <div className="p-3 md:p-4">
+                <p className="text-[10px] tracking-[0.25em] uppercase opacity-50">{p.tag}</p>
+                <h3 className="mt-1 text-sm md:text-base font-black tracking-tight">{p.name}</h3>
+                <p className="mt-1 text-sm">{formatCOP(PRICE)}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
