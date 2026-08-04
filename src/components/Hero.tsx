@@ -1,6 +1,8 @@
 import { motion } from "motion/react";
 import FaultyTerminal from "./FaultyTerminal.jsx";
-import liveLeakLogo from "@/assets/liveleak-logo-transparent.png";
+import FisheyeFilter from "./FisheyeFilter";
+
+const liveLeakLogo = "/images/liveleak-logo-transparent.webp";
 
 export default function Hero({ start = true }: { start?: boolean }) {
   return (
@@ -24,6 +26,8 @@ export default function Hero({ start = true }: { start?: boolean }) {
           brightness={0.45}
         />
       </div>
+      <FisheyeFilter />
+      <div className="hero-fisheye absolute inset-0 z-10">
       <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/70 pointer-events-none" />
 
       {/* REC indicator */}
@@ -91,6 +95,7 @@ export default function Hero({ start = true }: { start?: boolean }) {
         </span>
         <span className="animate-bounce text-sm leading-none">↓</span>
       </motion.a>
+      </div>
     </section>
   );
 }

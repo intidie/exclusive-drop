@@ -1,7 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
 import { PRODUCTS, PRICE } from "@/lib/drop-data";
-import intiNetLogo from "@/assets/inti-net-logo.png.asset.json";
 
 const formatCOP = (n: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
@@ -17,17 +16,17 @@ export default function CatalogSection() {
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           className="mb-12 md:mb-16 flex flex-col items-center text-center gap-6"
         >
-          <h2 className="text-3xl md:text-5xl font-black tracking-tight uppercase">
-            prohibido gente npc
-          </h2>
           <img
-            src={intiNetLogo.url}
+            src="/images/inti-net-logo.webp"
             alt="inti-net"
+            width={1200}
+            height={600}
             loading="lazy"
             decoding="async"
-            className="w-full max-w-md md:max-w-lg"
+            className="w-full max-w-md md:max-w-lg h-auto"
           />
         </motion.div>
+
 
 
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
