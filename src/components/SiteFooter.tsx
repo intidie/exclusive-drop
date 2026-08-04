@@ -1,4 +1,5 @@
 import { motion } from "motion/react";
+import { Link } from "@tanstack/react-router";
 import { CONTACT, waLink } from "@/lib/drop-data";
 
 export default function SiteFooter() {
@@ -6,12 +7,21 @@ export default function SiteFooter() {
     <footer className="bg-white text-black border-t border-black/10 py-12 px-6">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
         <p className="text-xs tracking-[0.3em] uppercase">© LIVE LEAKS by INTI(t)</p>
-        <a
-          href="#terms"
-          className="text-xs tracking-[0.3em] uppercase underline underline-offset-4 hover:opacity-60"
-        >
-          Términos y condiciones
-        </a>
+        <div className="flex flex-wrap items-center justify-center gap-6">
+          <Link
+            to="/pagos"
+            className="text-xs tracking-[0.3em] uppercase underline underline-offset-4 hover:opacity-60"
+          >
+            Pagos y envíos
+          </Link>
+          <Link
+            to="/terminos"
+            className="text-xs tracking-[0.3em] uppercase underline underline-offset-4 hover:opacity-60"
+          >
+            Términos y condiciones
+          </Link>
+        </div>
+
         <div className="flex items-center gap-3">
           <SocialLink href={CONTACT.instagram} label="Instagram">
             <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.6">
