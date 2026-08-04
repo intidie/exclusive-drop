@@ -14,9 +14,12 @@ export const Route = createFileRoute("/terminos")({
       { property: "og:title", content: "Términos y condiciones — INTI(t)" },
       { property: "og:description", content: "Compras, pedidos y políticas del drop LIVE LEAKS." },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "/terminos" },
       { name: "twitter:card", content: "summary" },
     ],
+    links: [{ rel: "canonical", href: "/terminos" }],
   }),
+
   component: TerminosPage,
 });
 

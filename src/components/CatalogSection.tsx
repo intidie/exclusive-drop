@@ -7,14 +7,15 @@ const formatCOP = (n: number) =>
 
 export default function CatalogSection() {
   return (
-    <section id="drop" className="bg-white text-black py-24 md:py-32 px-6">
+    <section id="drop" className="bg-white text-black pt-8 md:pt-10 pb-24 md:pb-32 px-6">
       <div className="max-w-6xl mx-auto">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-12 md:mb-16 flex flex-col items-center text-center gap-6"
+          initial={{ opacity: 0, y: 16, scale: 0.97 }}
+          whileInView={{ opacity: 1, y: 0, scale: 1 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          style={{ willChange: "transform, opacity" }}
+          className="mb-6 md:mb-8 flex flex-col items-center text-center"
         >
           <img
             src="/images/inti-net-logo.webp"
@@ -26,6 +27,8 @@ export default function CatalogSection() {
             className="w-full max-w-md md:max-w-lg h-auto"
           />
         </motion.div>
+
+
 
 
 

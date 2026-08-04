@@ -1,5 +1,8 @@
+import { useState } from "react";
 import { motion } from "motion/react";
 import { waLink } from "@/lib/drop-data";
+import PurchaseInfoModal from "@/components/PurchaseInfoModal";
+
 
 const fadeUp = {
   initial: { opacity: 0, y: 40 },
@@ -18,6 +21,8 @@ const METHODS = [
 ];
 
 export default function CheckoutSection() {
+  const [buyOpen, setBuyOpen] = useState(false);
+
   return (
     <section id="checkout" className="bg-white text-black py-24 md:py-32 px-6 border-t border-black/10">
       <div className="max-w-5xl mx-auto">
@@ -36,15 +41,16 @@ export default function CheckoutSection() {
         </div>
 
         <motion.div {...fadeUp} className="mt-12">
-          <a
-            href={waLink()}
-            target="_blank"
-            rel="noreferrer"
+          <button
+            type="button"
+            onClick={() => setBuyOpen(true)}
             className="inline-flex items-center justify-center h-14 px-10 bg-black text-white text-sm tracking-[0.2em] uppercase font-semibold border border-black hover:bg-white hover:text-black transition-all duration-300"
           >
-            Iniciar compra por WhatsApp
-          </a>
+            Confirmar compra
+          </button>
         </motion.div>
+        <PurchaseInfoModal open={buyOpen} onClose={() => setBuyOpen(false)} whatsappHref={waLink()} />
+
       </div>
     </section>
   );

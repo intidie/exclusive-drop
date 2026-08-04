@@ -3,6 +3,8 @@ import { useState } from "react";
 import { getProduct, PRODUCTS, PRICE, ORIGINAL_PRICE, USD_TRM, SIZES, CONTACT, waLink, PRINT_SPEC } from "@/lib/drop-data";
 import CountdownTimer from "@/components/CountdownTimer";
 import SizeGuideModal from "@/components/SizeGuideModal";
+import PurchaseInfoModal from "@/components/PurchaseInfoModal";
+
 
 const formatCOP = (n: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
@@ -19,25 +21,53 @@ export const Route = createFileRoute("/producto/$slug")({
     if (!loaderData)
       return { meta: [{ title: "Producto no disponible — INTI(t)" }, { name: "robots", content: "noindex" }] };
     const { product } = loaderData;
+    const url = `/producto/${product.slug}`;
     return {
       meta: [
         { title: `${product.name} — LIVE LEAKS by INTI(t)` },
-        { name: "description", content: product.description },
+        { name: "description", content: product.description.slice(0, 155) },
         { property: "og:title", content: `${product.name} — LIVE LEAKS by INTI(t)` },
-        { property: "og:description", content: product.description },
+        { property: "og:description", content: product.description.slice(0, 155) },
         { property: "og:type", content: "product" },
+        { property: "og:url", content: url },
         { name: "twitter:card", content: "summary_large_image" },
       ],
-      links: [{ rel: "preload", as: "image", href: product.image, fetchpriority: "high" }],
+      links: [
+        { rel: "canonical", href: url },
+        { rel: "preload", as: "image", href: product.image, fetchpriority: "high" },
+      ],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            name: product.name,
+            description: product.description,
+            image: `https://inti-net.vercel.app${product.image}`,
+            brand: { "@type": "Brand", name: "INTI(t)" },
+            offers: {
+              "@type": "Offer",
+              price: PRICE,
+              priceCurrency: "COP",
+              availability: "https://schema.org/InStock",
+              url: `https://inti-net.vercel.app${url}`,
+            },
+          }),
+        },
+      ],
     };
   },
   component: ProductPage,
 });
 
+
 function ProductPage() {
   const { product } = Route.useLoaderData();
   const [size, setSize] = useState("XL");
   const [guideOpen, setGuideOpen] = useState(false);
+  const [buyOpen, setBuyOpen] = useState(false);
+
 
   return (
     <main className="bg-white text-black min-h-screen font-sans">
@@ -123,19 +153,19 @@ function ProductPage() {
             </div>
           </div>
 
-          <a
-            href={waLink(`Producto: ${product.name} — Talla ${size}`)}
-            target="_blank"
-            rel="noreferrer"
+          <button
+            type="button"
+            onClick={() => setBuyOpen(true)}
             className="inline-flex items-center justify-center h-14 px-8 text-sm tracking-[0.2em] uppercase font-semibold bg-black text-white border border-black hover:bg-white hover:text-black transition-colors"
           >
-            Apartar por WhatsApp
-          </a>
+            Confirmar compra
+          </button>
 
           <p className="text-xs text-neutral-600 leading-relaxed">
-            Pagos: Nequi · Contraentrega · PayPal · Daviplata · Bancolombia · Wise · BTC / ETH / USDT.
+            Pagos: Contraentrega · Nequi · PayPal · Daviplata · Bancolombia · Wise · BTC / ETH / USDT.
             Envíos a Colombia y a todo el mundo.
           </p>
+
 
           <p className="text-xs tracking-[0.2em] uppercase text-neutral-600">
             Drop limitado y único — pocas unidades por talla.
@@ -164,6 +194,12 @@ function ProductPage() {
       </section>
 
       <SizeGuideModal open={guideOpen} onClose={() => setGuideOpen(false)} />
+      <PurchaseInfoModal
+        open={buyOpen}
+        onClose={() => setBuyOpen(false)}
+        whatsappHref={waLink(`Producto: ${product.name} — Talla ${size}`)}
+      />
+
     </main>
   );
 }

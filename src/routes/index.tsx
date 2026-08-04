@@ -6,10 +6,10 @@ import Hero from "@/components/Hero";
 const AdultsOnlySection = lazy(() => import("@/components/AdultsOnlySection"));
 const CatalogSection = lazy(() => import("@/components/CatalogSection"));
 const DropBySection = lazy(() => import("@/components/DropBySection"));
-const CheckoutSection = lazy(() => import("@/components/CheckoutSection"));
-const TermsSection = lazy(() => import("@/components/TermsSection"));
+const InfoLinksSection = lazy(() => import("@/components/InfoLinksSection"));
 const SiteFooter = lazy(() => import("@/components/SiteFooter"));
 const FloatingContact = lazy(() => import("@/components/FloatingContact"));
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -21,14 +21,29 @@ export const Route = createFileRoute("/")({
           "Drop exclusivo de camisas LIVE LEAKS by INTI(t). 5 piezas, todas las tallas. Pagos locales, internacionales y cripto.",
       },
       { property: "og:title", content: "LIVE LEAKS by INTI(t) — Drop único" },
-      { property: "og:description", content: "Drop exclusivo de camisas. 5 piezas, edición limitada." },
+      { property: "og:description", content: "Drop exclusivo de camisas. 5 piezas, todas las tallas disponibles." },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "/" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
+      { rel: "canonical", href: "/" },
       { rel: "icon", href: "/favicon.png" },
       { rel: "preload", as: "image", href: "/images/machine_girl.webp", fetchpriority: "high" },
     ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "LIVE LEAKS by INTI(t)",
+          url: "https://inti-net.vercel.app",
+          sameAs: ["https://www.instagram.com/intitnet/"],
+        }),
+      },
+    ],
+
   }),
   component: Index,
 });
@@ -45,8 +60,8 @@ function Index() {
         <AdultsOnlySection />
         <CatalogSection />
         <DropBySection />
-        <CheckoutSection />
-        <TermsSection />
+        <InfoLinksSection />
+
         <SiteFooter />
         <FloatingContact />
       </Suspense>
