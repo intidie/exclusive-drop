@@ -64,6 +64,8 @@ function ProductPage() {
   const { product } = Route.useLoaderData();
   const [size, setSize] = useState("XL");
   const [guideOpen, setGuideOpen] = useState(false);
+  const [buyOpen, setBuyOpen] = useState(false);
+
 
   return (
     <main className="bg-white text-black min-h-screen font-sans">
