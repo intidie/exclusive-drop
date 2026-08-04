@@ -45,8 +45,8 @@ function Index() {
         <AdultsOnlySection />
         <CatalogSection />
         <DropBySection />
-        <CheckoutSection />
-        <TermsSection />
+        <InfoLinksSection />
+
         <SiteFooter />
         <FloatingContact />
       </Suspense>
