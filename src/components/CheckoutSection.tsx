@@ -21,6 +21,8 @@ const METHODS = [
 ];
 
 export default function CheckoutSection() {
+  const [buyOpen, setBuyOpen] = useState(false);
+
   return (
     <section id="checkout" className="bg-white text-black py-24 md:py-32 px-6 border-t border-black/10">
       <div className="max-w-5xl mx-auto">
