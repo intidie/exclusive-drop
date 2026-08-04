@@ -95,6 +95,7 @@ export default function Hero({ start = true }: { start?: boolean }) {
         </span>
         <span className="animate-bounce text-sm leading-none">↓</span>
       </motion.a>
+      </div>
     </section>
   );
 }
