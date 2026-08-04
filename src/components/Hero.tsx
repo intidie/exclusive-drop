@@ -26,6 +26,8 @@ export default function Hero({ start = true }: { start?: boolean }) {
           brightness={0.45}
         />
       </div>
+      <FisheyeFilter />
+      <div className="hero-fisheye absolute inset-0 z-10">
       <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/70 pointer-events-none" />
 
       {/* REC indicator */}
