@@ -1,6 +1,6 @@
 import { motion } from "motion/react";
 import FaultyTerminal from "./FaultyTerminal.jsx";
-import FisheyeFilter from "./FisheyeFilter";
+
 
 const liveLeakLogo = "/images/liveleak-logo-transparent.webp";
 
