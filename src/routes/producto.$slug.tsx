@@ -3,6 +3,8 @@ import { useState } from "react";
 import { getProduct, PRODUCTS, PRICE, ORIGINAL_PRICE, USD_TRM, SIZES, CONTACT, waLink, PRINT_SPEC } from "@/lib/drop-data";
 import CountdownTimer from "@/components/CountdownTimer";
 import SizeGuideModal from "@/components/SizeGuideModal";
+import PurchaseInfoModal from "@/components/PurchaseInfoModal";
+
 
 const formatCOP = (n: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
@@ -192,6 +194,12 @@ function ProductPage() {
       </section>
 
       <SizeGuideModal open={guideOpen} onClose={() => setGuideOpen(false)} />
+      <PurchaseInfoModal
+        open={buyOpen}
+        onClose={() => setBuyOpen(false)}
+        whatsappHref={waLink(`Producto: ${product.name} — Talla ${size}`)}
+      />
+
     </main>
   );
 }
