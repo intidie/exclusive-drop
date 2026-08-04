@@ -149,19 +149,19 @@ function ProductPage() {
             </div>
           </div>
 
-          <a
-            href={waLink(`Producto: ${product.name} — Talla ${size}`)}
-            target="_blank"
-            rel="noreferrer"
+          <button
+            type="button"
+            onClick={() => setBuyOpen(true)}
             className="inline-flex items-center justify-center h-14 px-8 text-sm tracking-[0.2em] uppercase font-semibold bg-black text-white border border-black hover:bg-white hover:text-black transition-colors"
           >
-            Apartar por WhatsApp
-          </a>
+            Confirmar compra
+          </button>
 
           <p className="text-xs text-neutral-600 leading-relaxed">
-            Pagos: Nequi · Contraentrega · PayPal · Daviplata · Bancolombia · Wise · BTC / ETH / USDT.
+            Pagos: Contraentrega · Nequi · PayPal · Daviplata · Bancolombia · Wise · BTC / ETH / USDT.
             Envíos a Colombia y a todo el mundo.
           </p>
+
 
           <p className="text-xs tracking-[0.2em] uppercase text-neutral-600">
             Drop limitado y único — pocas unidades por talla.
