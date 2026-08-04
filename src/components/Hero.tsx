@@ -1,6 +1,8 @@
 import { motion } from "motion/react";
 import FaultyTerminal from "./FaultyTerminal.jsx";
-import liveLeakLogo from "@/assets/liveleak-logo-transparent.png";
+import FisheyeFilter from "./FisheyeFilter";
+
+const liveLeakLogo = "/images/liveleak-logo-transparent.webp";
 
 export default function Hero({ start = true }: { start?: boolean }) {
   return (
