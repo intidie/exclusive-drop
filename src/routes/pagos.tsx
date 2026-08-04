@@ -14,9 +14,12 @@ export const Route = createFileRoute("/pagos")({
       { property: "og:title", content: "Métodos de pago y envíos — INTI(t)" },
       { property: "og:description", content: "Pagos locales, internacionales y cripto. Envíos worldwide." },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "/pagos" },
       { name: "twitter:card", content: "summary" },
     ],
+    links: [{ rel: "canonical", href: "/pagos" }],
   }),
+
   component: PagosPage,
 });
 
