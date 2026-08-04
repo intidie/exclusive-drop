@@ -172,3 +172,8 @@
 }
 
 
+/* Fisheye (barrel) distortion for the hero composition */
+.hero-fisheye {
+  filter: url(#hero-fisheye);
+  will-change: filter;
+}
