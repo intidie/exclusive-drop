@@ -19,20 +19,46 @@ export const Route = createFileRoute("/producto/$slug")({
     if (!loaderData)
       return { meta: [{ title: "Producto no disponible — INTI(t)" }, { name: "robots", content: "noindex" }] };
     const { product } = loaderData;
+    const url = `/producto/${product.slug}`;
     return {
       meta: [
         { title: `${product.name} — LIVE LEAKS by INTI(t)` },
-        { name: "description", content: product.description },
+        { name: "description", content: product.description.slice(0, 155) },
         { property: "og:title", content: `${product.name} — LIVE LEAKS by INTI(t)` },
-        { property: "og:description", content: product.description },
+        { property: "og:description", content: product.description.slice(0, 155) },
         { property: "og:type", content: "product" },
+        { property: "og:url", content: url },
         { name: "twitter:card", content: "summary_large_image" },
       ],
-      links: [{ rel: "preload", as: "image", href: product.image, fetchpriority: "high" }],
+      links: [
+        { rel: "canonical", href: url },
+        { rel: "preload", as: "image", href: product.image, fetchpriority: "high" },
+      ],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            name: product.name,
+            description: product.description,
+            image: `https://inti-net.vercel.app${product.image}`,
+            brand: { "@type": "Brand", name: "INTI(t)" },
+            offers: {
+              "@type": "Offer",
+              price: PRICE,
+              priceCurrency: "COP",
+              availability: "https://schema.org/InStock",
+              url: `https://inti-net.vercel.app${url}`,
+            },
+          }),
+        },
+      ],
     };
   },
   component: ProductPage,
 });
+
 
 function ProductPage() {
   const { product } = Route.useLoaderData();
