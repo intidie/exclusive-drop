@@ -54,6 +54,27 @@ export default function Hero({ start = true }: { start?: boolean }) {
 
       <div className="relative z-10 flex flex-col items-center justify-center h-full px-6 text-center pointer-events-none">
         <motion.img
+          src="/images/inti-net-logo.webp"
+          alt="inti-net"
+          loading="eager"
+          decoding="async"
+          initial={{ opacity: 0, scale: 1.06 }}
+          animate={start ? { opacity: 1, scale: 1 } : {}}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className="w-56 sm:w-72 md:w-96 mb-1 animate-logo-pulse glitch"
+        />
+        <motion.img
+          src="/images/eternity-ornament.webp"
+          alt=""
+          aria-hidden
+          loading="lazy"
+          decoding="async"
+          initial={{ opacity: 0 }}
+          animate={start ? { opacity: 0.45 } : {}}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          className="w-40 sm:w-56 md:w-72 mb-2 mix-blend-screen animate-decor-drift"
+        />
+        <motion.img
           src={liveLeakLogo}
           alt="LiveLeak"
           loading="eager"
@@ -64,6 +85,7 @@ export default function Hero({ start = true }: { start?: boolean }) {
           transition={{ duration: 0.3, ease: "easeOut" }}
           className="w-40 sm:w-52 md:w-64 mb-4 drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)]"
         />
+
 
         {/* Strobe runs on GPU via CSS keyframes, no Framer per-frame work. */}
         <h1
