@@ -57,18 +57,25 @@ function Index() {
   const [loaderGone, setLoaderGone] = useState(false);
 
   return (
-    <div className="bg-black text-black min-h-screen font-sans">
+    <div className="relative bg-black text-black min-h-screen font-sans">
       <LoadingScreen onDone={() => setLoaderGone(true)} />
       <Hero start={loaderGone} />
       <Suspense fallback={null}>
-        <AdultsOnlySection />
-        <CatalogSection />
-        <DropBySection />
-        <InfoLinksSection />
-
-        <SiteFooter />
-        <FloatingContact />
+        <DecorLayer />
       </Suspense>
-    </div>
+      <div className="relative z-10">
+        <Suspense fallback={null}>
+          <AdultsOnlySection />
+          <CatalogSection />
+          <HalftoneSection />
+          <DropBySection />
+          <FlickerSection />
+          <InfoLinksSection />
+
+          <SiteFooter />
+          <FloatingContact />
+        </Suspense>
+      </div>
+
   );
 }
