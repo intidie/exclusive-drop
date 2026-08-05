@@ -59,7 +59,7 @@ export default function CatalogSection() {
                   height={1500}
                   loading={i < 2 ? "eager" : "lazy"}
                   decoding="async"
-                  className="w-full h-full object-cover grayscale contrast-125 transition-all duration-700 ease-out group-hover:grayscale-0 group-hover:scale-105"
+                  className="w-full h-full object-cover contrast-125 transition-all duration-700 ease-out md:grayscale group-hover:grayscale-0 group-hover:scale-105"
                 />
               </div>
               <div className="p-3 md:p-4">
