@@ -7,7 +7,7 @@ const formatCOP = (n: number) =>
 
 export default function CatalogSection() {
   return (
-    <section id="drop" className="bg-white text-black pt-8 md:pt-10 pb-24 md:pb-32 px-6">
+    <section id="drop" className="relative bg-black text-white pt-10 md:pt-14 pb-24 md:pb-32 px-6 grain scanlines overflow-hidden">
       <div className="max-w-6xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 16, scale: 0.97 }}
