@@ -4,19 +4,19 @@ import { CONTACT, waLink } from "@/lib/drop-data";
 
 export default function SiteFooter() {
   return (
-    <footer className="bg-white text-black border-t border-black/10 py-12 px-6">
+    <footer className="bg-black text-white border-t border-white/10 py-12 px-6">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-        <p className="text-xs tracking-[0.3em] uppercase">© LIVE LEAKS by INTI(t)</p>
+        <p className="micro">© LIVE LEAKS by INTI(t)</p>
         <div className="flex flex-wrap items-center justify-center gap-6">
           <Link
             to="/pagos"
-            className="text-xs tracking-[0.3em] uppercase underline underline-offset-4 hover:opacity-60"
+            className="micro underline underline-offset-4 hover:opacity-60"
           >
             Pagos y envíos
           </Link>
           <Link
             to="/terminos"
-            className="text-xs tracking-[0.3em] uppercase underline underline-offset-4 hover:opacity-60"
+            className="micro underline underline-offset-4 hover:opacity-60"
           >
             Términos y condiciones
           </Link>
@@ -50,7 +50,7 @@ function SocialLink({ href, label, children }: { href: string; label: string; ch
       aria-label={label}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
-      className="w-11 h-11 flex items-center justify-center border border-black text-black hover:bg-black hover:text-white transition-colors duration-300"
+      className="w-11 h-11 flex items-center justify-center hairline text-white hover:bg-white hover:text-black transition-colors duration-300"
     >
       {children}
     </motion.a>

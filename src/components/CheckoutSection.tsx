@@ -24,12 +24,12 @@ export default function CheckoutSection() {
   const [buyOpen, setBuyOpen] = useState(false);
 
   return (
-    <section id="checkout" className="bg-white text-black py-24 md:py-32 px-6 border-t border-black/10">
+    <section id="checkout" className="bg-black text-white py-24 md:py-32 px-6 border-t border-white/10">
       <div className="max-w-5xl mx-auto">
         <motion.div {...fadeUp}>
           <p className="text-xs tracking-[0.3em] uppercase mb-3">Métodos de pago & envíos</p>
-          <h2 className="text-4xl md:text-6xl font-black tracking-tight">Paga como prefieras.</h2>
-          <p className="mt-4 text-sm md:text-base text-neutral-600 max-w-2xl">
+          <h2 className="text-4xl md:text-6xl font-display tracking-wide">Paga como prefieras.</h2>
+          <p className="mt-4 text-sm md:text-base text-white/60 max-w-2xl">
             Aceptamos pagos locales e internacionales: Nequi, Pago Contraentrega, PayPal, billeteras digitales y criptomonedas (BTC, ETH, USDT). Enviamos a Colombia y a todo el mundo.
           </p>
         </motion.div>
@@ -44,7 +44,7 @@ export default function CheckoutSection() {
           <button
             type="button"
             onClick={() => setBuyOpen(true)}
-            className="inline-flex items-center justify-center h-14 px-10 bg-black text-white text-sm tracking-[0.2em] uppercase font-semibold border border-black hover:bg-white hover:text-black transition-all duration-300"
+            className="inline-flex items-center justify-center h-14 px-10 bg-black text-white text-sm tracking-[0.2em] uppercase font-semibold border border-white/25 hover:bg-white hover:text-black transition-all duration-300"
           >
             Confirmar compra
           </button>
@@ -61,10 +61,10 @@ function PaymentCard({ tag, title, desc }: { tag: string; title: string; desc: s
     <motion.div
       {...fadeUp}
       whileHover={{ y: -4 }}
-      className="border border-black p-6 md:p-8 transition-colors duration-300 hover:bg-black hover:text-white group"
+      className="border border-white/25 p-6 md:p-8 transition-colors duration-300 hover:bg-white hover:text-black group"
     >
       <p className="text-[10px] tracking-[0.3em] uppercase opacity-60">{tag}</p>
-      <h3 className="mt-2 text-xl font-black tracking-tight">{title}</h3>
+      <h3 className="mt-2 text-xl font-display tracking-wide">{title}</h3>
       <p className="mt-3 text-sm opacity-80">{desc}</p>
     </motion.div>
   );

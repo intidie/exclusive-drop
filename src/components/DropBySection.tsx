@@ -3,8 +3,8 @@ import intitPack from "@/assets/intit-pack.png.asset.json";
 
 export default function DropBySection() {
   return (
-    <section className="bg-black text-white py-12 md:py-16 px-6">
-      <div className="max-w-3xl mx-auto flex flex-col items-center text-center gap-5">
+    <section className="relative bg-black text-white py-12 md:py-16 px-6 grain scanlines overflow-hidden">
+      <div className="max-w-3xl mx-auto flex flex-col items-center text-center gap-5 relative z-10">
 
         <motion.p
           initial={{ opacity: 0, y: 20 }}
@@ -41,7 +41,7 @@ export default function DropBySection() {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-xl md:text-2xl font-black tracking-tight"
+          className="text-3xl md:text-4xl font-display tracking-wide"
         >
           INTI(t)
         </motion.p>
