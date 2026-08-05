@@ -70,25 +70,25 @@ function ProductPage() {
 
 
   return (
-    <main className="bg-white text-black min-h-screen font-sans">
-      <header className="border-b border-black/10 px-6 py-4 flex items-center justify-between">
-        <Link to="/" className="text-xs tracking-[0.25em] uppercase font-semibold hover:opacity-60">
+    <main className="bg-black text-white min-h-screen font-sans grain">
+      <header className="relative z-10 border-b border-white/10 px-6 py-4 flex items-center justify-between">
+        <Link to="/" className="micro font-semibold hover:opacity-60">
           ← INTI(t)
         </Link>
         <a
           href={CONTACT.instagram}
           target="_blank"
           rel="noreferrer"
-          className="text-xs tracking-[0.25em] uppercase hover:opacity-60"
+          className="micro hover:opacity-60"
         >
           {CONTACT.instagramHandle}
         </a>
       </header>
 
-      <article className="max-w-6xl mx-auto px-6 py-10 md:py-16 grid md:grid-cols-2 gap-8 md:gap-16 items-start">
+      <article className="max-w-6xl mx-auto px-6 py-10 md:py-16 grid md:grid-cols-2 gap-8 md:gap-16 items-start relative z-10">
         <div className="grid gap-4">
           {product.images.map((src: string, i: number) => (
-            <div key={src} className="aspect-[4/5] overflow-hidden bg-neutral-100 group cursor-zoom-in">
+            <div key={src} className="aspect-[4/5] overflow-hidden bg-neutral-950 hairline group cursor-zoom-in">
               <img
                 src={src}
                 alt={`${product.name} vista ${i + 1}`}
@@ -104,35 +104,35 @@ function ProductPage() {
 
         <div className="flex flex-col gap-6 md:sticky md:top-10">
           <div>
-            <p className="text-[10px] tracking-[0.3em] uppercase opacity-50">{product.tag}</p>
-            <h1 className="mt-1 text-3xl md:text-5xl font-black tracking-tight">{product.name}</h1>
+            <p className="micro opacity-50">{product.tag}</p>
+            <h1 className="mt-2 text-4xl md:text-6xl font-display tracking-wide leading-none">{product.name}</h1>
             <div className="mt-3 flex items-baseline gap-3 flex-wrap">
-              <span className="text-base text-neutral-400 line-through">{formatCOP(ORIGINAL_PRICE)}</span>
+              <span className="text-base text-white/40 line-through">{formatCOP(ORIGINAL_PRICE)}</span>
               <span className="text-[10px] tracking-[0.3em] uppercase bg-red-600 text-white px-2 py-0.5">Oferta</span>
               <CountdownTimer />
             </div>
             <p className="mt-1 text-4xl md:text-5xl font-black tracking-tight animate-price-flash">
               {formatCOP(PRICE)}
             </p>
-            <p className="text-sm text-neutral-600 mt-1">
+            <p className="text-sm text-white/60 mt-1 font-mono">
               ≈ {formatUSD(Math.round(PRICE / USD_TRM))} USD{" "}
               <span className="text-xs opacity-60">(TRM {formatCOP(USD_TRM)}/USD)</span>
             </p>
           </div>
 
-          <p className="text-sm text-neutral-700 leading-relaxed">{product.description}</p>
+          <p className="text-sm text-white/70 leading-relaxed">{product.description}</p>
 
-          <p className="text-xs tracking-[0.15em] uppercase font-semibold border border-black/15 px-3 py-2">
+          <p className="micro font-semibold hairline px-3 py-2 leading-relaxed">
             {PRINT_SPEC}
           </p>
 
 
           <div>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs tracking-[0.2em] uppercase">Talla</p>
+              <p className="micro">Talla</p>
               <button
                 onClick={() => setGuideOpen(true)}
-                className="text-xs tracking-[0.2em] uppercase underline underline-offset-4 hover:opacity-60"
+                className="micro underline underline-offset-4 hover:opacity-60"
               >
                 Guía de tallas
               </button>
@@ -143,8 +143,8 @@ function ProductPage() {
                   key={s}
                   type="button"
                   onClick={() => setSize(s)}
-                  className={`inline-flex items-center justify-center h-12 px-6 border border-black text-sm font-medium transition-colors ${
-                    size === s ? "bg-black text-white" : "bg-white text-black hover:bg-neutral-100"
+                  className={`inline-flex items-center justify-center h-12 px-6 hairline text-sm font-mono transition-colors ${
+                    size === s ? "bg-white text-black" : "bg-transparent text-white hover:bg-white/10"
                   }`}
                 >
                   {s}
@@ -156,38 +156,38 @@ function ProductPage() {
           <button
             type="button"
             onClick={() => setBuyOpen(true)}
-            className="inline-flex items-center justify-center h-14 px-8 text-sm tracking-[0.2em] uppercase font-semibold bg-black text-white border border-black hover:bg-white hover:text-black transition-colors"
+            className="inline-flex items-center justify-center h-14 px-8 micro font-semibold bg-white text-black border border-white hover:bg-transparent hover:text-white transition-colors"
           >
             Confirmar compra
           </button>
 
-          <p className="text-xs text-neutral-600 leading-relaxed">
+          <p className="text-xs text-white/55 leading-relaxed">
             Pagos: Contraentrega · Nequi · PayPal · Daviplata · Bancolombia · Wise · BTC / ETH / USDT.
             Envíos a Colombia y a todo el mundo.
           </p>
 
 
-          <p className="text-xs tracking-[0.2em] uppercase text-neutral-600">
+          <p className="micro text-white/55">
             Drop limitado y único — pocas unidades por talla.
           </p>
         </div>
       </article>
 
-      <section className="max-w-6xl mx-auto px-6 pb-20">
-        <p className="text-xs tracking-[0.3em] uppercase mb-6">Más del drop</p>
+      <section className="max-w-6xl mx-auto px-6 pb-20 relative z-10">
+        <p className="micro mb-6 text-white/50">Más del drop</p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {PRODUCTS.filter((p) => p.slug !== product.slug).map((p) => (
             <Link key={p.slug} to="/producto/$slug" params={{ slug: p.slug }} className="group block">
-              <div className="aspect-[4/5] overflow-hidden bg-neutral-100">
+              <div className="aspect-[4/5] overflow-hidden bg-neutral-950 hairline">
                 <img
                   src={p.image}
                   alt={p.name}
                   loading="lazy"
                   decoding="async"
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 grayscale contrast-125 group-hover:grayscale-0"
                 />
               </div>
-              <p className="mt-2 text-xs font-black tracking-tight">{p.name}</p>
+              <p className="mt-2 text-base font-display tracking-wide">{p.name}</p>
             </Link>
           ))}
         </div>

@@ -18,8 +18,8 @@ const LINKS = [
 
 export default function InfoLinksSection() {
   return (
-    <section className="bg-white text-black py-20 md:py-24 px-6 border-t border-black/10">
-      <div className="max-w-5xl mx-auto grid sm:grid-cols-2 gap-4">
+    <section className="relative bg-black text-white py-20 md:py-24 px-6 border-t border-white/10 grain">
+      <div className="max-w-5xl mx-auto grid sm:grid-cols-2 gap-4 relative z-10">
         {LINKS.map((l, i) => (
           <motion.div
             key={l.to}
@@ -30,12 +30,12 @@ export default function InfoLinksSection() {
           >
             <Link
               to={l.to}
-              className="block h-full border border-black p-6 md:p-8 hover:bg-black hover:text-white transition-colors duration-300"
+              className="block h-full hairline p-6 md:p-8 transition-colors duration-300 hover:bg-white hover:text-black"
             >
-              <p className="text-[10px] tracking-[0.3em] uppercase opacity-60">{l.tag}</p>
-              <h3 className="mt-2 text-xl md:text-2xl font-black tracking-tight">{l.title}</h3>
-              <p className="mt-3 text-sm opacity-80">{l.desc}</p>
-              <p className="mt-5 text-xs tracking-[0.3em] uppercase underline underline-offset-4">Ver más →</p>
+              <p className="micro opacity-50">{l.tag}</p>
+              <h3 className="mt-3 text-2xl md:text-3xl font-display tracking-wide leading-none">{l.title}</h3>
+              <p className="mt-3 text-sm opacity-70">{l.desc}</p>
+              <p className="mt-5 micro underline underline-offset-4">Ver más →</p>
             </Link>
           </motion.div>
         ))}
