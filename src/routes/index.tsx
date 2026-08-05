@@ -5,10 +5,14 @@ import Hero from "@/components/Hero";
 
 const AdultsOnlySection = lazy(() => import("@/components/AdultsOnlySection"));
 const CatalogSection = lazy(() => import("@/components/CatalogSection"));
+const HalftoneSection = lazy(() => import("@/components/HalftoneSection"));
 const DropBySection = lazy(() => import("@/components/DropBySection"));
+const FlickerSection = lazy(() => import("@/components/FlickerSection"));
 const InfoLinksSection = lazy(() => import("@/components/InfoLinksSection"));
 const SiteFooter = lazy(() => import("@/components/SiteFooter"));
 const FloatingContact = lazy(() => import("@/components/FloatingContact"));
+const DecorLayer = lazy(() => import("@/components/DecorLayer"));
+
 
 
 export const Route = createFileRoute("/")({
