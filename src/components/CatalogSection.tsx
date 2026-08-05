@@ -20,13 +20,24 @@ export default function CatalogSection() {
           <img
             src="/images/inti-net-logo.webp"
             alt="inti-net"
-            width={1200}
-            height={600}
+            width={1774}
+            height={887}
             loading="lazy"
             decoding="async"
-            className="w-full max-w-md md:max-w-lg h-auto glitch"
+            className="w-full max-w-md md:max-w-lg h-auto glitch animate-logo-pulse"
+          />
+          <img
+            src="/images/eternity-ornament.webp"
+            alt=""
+            aria-hidden
+            width={1199}
+            height={628}
+            loading="lazy"
+            decoding="async"
+            className="w-full max-w-xs md:max-w-sm h-auto -mt-2 opacity-40 mix-blend-screen animate-decor-drift"
           />
           <p className="micro mt-4 text-white/45">Catálogo · 05 piezas · edición única</p>
+
         </motion.div>
 
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-px bg-white/15">
@@ -48,7 +59,7 @@ export default function CatalogSection() {
                   height={1500}
                   loading={i < 2 ? "eager" : "lazy"}
                   decoding="async"
-                  className="w-full h-full object-cover grayscale contrast-125 transition-all duration-700 ease-out group-hover:grayscale-0 group-hover:scale-105"
+                  className="w-full h-full object-cover contrast-125 transition-all duration-700 ease-out md:grayscale group-hover:grayscale-0 group-hover:scale-105"
                 />
               </div>
               <div className="p-3 md:p-4">

@@ -5,10 +5,14 @@ import Hero from "@/components/Hero";
 
 const AdultsOnlySection = lazy(() => import("@/components/AdultsOnlySection"));
 const CatalogSection = lazy(() => import("@/components/CatalogSection"));
+const HalftoneSection = lazy(() => import("@/components/HalftoneSection"));
 const DropBySection = lazy(() => import("@/components/DropBySection"));
+const FlickerSection = lazy(() => import("@/components/FlickerSection"));
 const InfoLinksSection = lazy(() => import("@/components/InfoLinksSection"));
 const SiteFooter = lazy(() => import("@/components/SiteFooter"));
 const FloatingContact = lazy(() => import("@/components/FloatingContact"));
+const DecorLayer = lazy(() => import("@/components/DecorLayer"));
+
 
 
 export const Route = createFileRoute("/")({
@@ -53,18 +57,26 @@ function Index() {
   const [loaderGone, setLoaderGone] = useState(false);
 
   return (
-    <div className="bg-black text-black min-h-screen font-sans">
+    <div className="relative bg-black text-black min-h-screen font-sans">
       <LoadingScreen onDone={() => setLoaderGone(true)} />
       <Hero start={loaderGone} />
       <Suspense fallback={null}>
-        <AdultsOnlySection />
-        <CatalogSection />
-        <DropBySection />
-        <InfoLinksSection />
-
-        <SiteFooter />
-        <FloatingContact />
+        <DecorLayer />
       </Suspense>
+      <div className="relative z-10">
+        <Suspense fallback={null}>
+          <AdultsOnlySection />
+          <CatalogSection />
+          <HalftoneSection />
+          <DropBySection />
+          <FlickerSection />
+          <InfoLinksSection />
+
+          <SiteFooter />
+          <FloatingContact />
+        </Suspense>
+      </div>
     </div>
+
   );
 }
