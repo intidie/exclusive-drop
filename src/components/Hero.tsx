@@ -26,9 +26,17 @@ export default function Hero({ start = true }: { start?: boolean }) {
           brightness={0.45}
         />
       </div>
+      {/* Capa intermedia sólida negra: separa el fondo animado del contenido */}
+      <div
+        className="absolute inset-0 z-[5] bg-black pointer-events-none"
+        style={{ opacity: 0.55, mixBlendMode: "multiply" }}
+      />
+      <div className="absolute inset-0 z-[6] pointer-events-none scanlines" />
+
       <div className="absolute inset-0 z-10">
 
-      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/70 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/70 pointer-events-none" />
+
 
       {/* REC indicator */}
       <motion.div
