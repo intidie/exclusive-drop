@@ -76,6 +76,7 @@ function Index() {
           <FloatingContact />
         </Suspense>
       </div>
+    </div>
 
   );
 }
