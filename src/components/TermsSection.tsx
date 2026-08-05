@@ -36,14 +36,14 @@ const TERMS = [
 
 export default function TermsSection() {
   return (
-    <section id="terms" className="bg-white text-black py-24 px-6 border-t border-black/10">
+    <section id="terms" className="bg-black text-white py-24 px-6 border-t border-white/10">
       <div className="max-w-4xl mx-auto">
         <motion.div {...fadeUp}>
           <p className="text-xs tracking-[0.3em] uppercase mb-3">Legal</p>
-          <h2 className="text-3xl md:text-5xl font-black tracking-tight">
+          <h2 className="text-3xl md:text-5xl font-display tracking-wide">
             Términos y condiciones
           </h2>
-          <p className="mt-3 text-sm text-neutral-600 max-w-xl">
+          <p className="mt-3 text-sm text-white/60 max-w-xl">
             Compras, pedidos y políticas del drop LIVE LEAKS by INTI(t).
           </p>
         </motion.div>
@@ -54,18 +54,18 @@ export default function TermsSection() {
               key={item.t}
               {...fadeUp}
               transition={{ ...fadeUp.transition, delay: i * 0.05 }}
-              className="border border-black p-5"
+              className="border border-white/25 p-5"
             >
               <p className="text-[10px] tracking-[0.3em] uppercase opacity-60">
                 {String(i + 1).padStart(2, "0")}
               </p>
-              <h3 className="mt-1 text-lg font-black tracking-tight">{item.t}</h3>
-              <p className="mt-2 text-sm text-neutral-700 leading-relaxed">{item.d}</p>
+              <h3 className="mt-1 text-lg font-display tracking-wide">{item.t}</h3>
+              <p className="mt-2 text-sm text-white/70 leading-relaxed">{item.d}</p>
             </motion.div>
           ))}
         </div>
 
-        <p className="mt-10 text-xs text-neutral-500 tracking-wide">
+        <p className="mt-10 text-xs text-white/45 tracking-wide">
           Al apartar tu camisa por WhatsApp aceptas estos términos. Última actualización: 2026.
         </p>
       </div>

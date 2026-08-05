@@ -25,8 +25,8 @@ export const Route = createFileRoute("/terminos")({
 
 function TerminosPage() {
   return (
-    <div className="bg-white text-black min-h-screen font-sans">
-      <nav className="px-6 py-5 border-b border-black/10">
+    <div className="bg-black text-white min-h-screen font-sans">
+      <nav className="px-6 py-5 border-b border-white/10">
         <Link to="/" className="text-xs tracking-[0.3em] uppercase hover:opacity-60">
           ← Volver
         </Link>

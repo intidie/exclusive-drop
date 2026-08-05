@@ -38,24 +38,24 @@ export default function SizeGuideModal({
             exit={{ y: 20, opacity: 0, scale: 0.97 }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
             onClick={(e) => e.stopPropagation()}
-            className="bg-white text-black w-full max-w-5xl max-h-[92vh] overflow-y-auto border border-black relative"
+            className="bg-black text-white w-full max-w-5xl max-h-[92vh] overflow-y-auto border border-white/25 relative"
           >
-            <div className="sticky top-0 z-10 flex justify-end p-2 bg-white border-b border-black/10">
+            <div className="sticky top-0 z-10 flex justify-end p-2 bg-white border-b border-white/10">
               <button
                 onClick={onClose}
                 aria-label="Cerrar"
                 type="button"
-                className="w-11 h-11 flex items-center justify-center border border-black text-2xl leading-none active:bg-black active:text-white hover:bg-black hover:text-white transition-colors"
+                className="w-11 h-11 flex items-center justify-center border border-white/25 text-2xl leading-none active:bg-black active:text-white hover:bg-white hover:text-black transition-colors"
               >
                 ×
               </button>
             </div>
             <div className="p-6 md:p-10 pt-4">
             <p className="text-[10px] tracking-[0.3em] uppercase opacity-60">Guía</p>
-            <h3 className="text-2xl md:text-4xl font-black tracking-tight mt-1">
+            <h3 className="text-2xl md:text-4xl font-display tracking-wide mt-1">
               Tallas — Medidas en cm
             </h3>
-            <p className="text-sm text-neutral-600 mt-2">
+            <p className="text-sm text-white/60 mt-2">
               La camisa es <strong>talla única (oversize)</strong>. Estas son las medidas
               equivalentes en XL y XXL, tomadas con la prenda tendida.
             </p>
@@ -64,7 +64,7 @@ export default function SizeGuideModal({
               <ShirtDiagram />
               <div className="space-y-4">
                 {SIZE_GUIDE.map((s) => (
-                  <div key={s.size} className="border border-black p-4">
+                  <div key={s.size} className="border border-white/25 p-4">
                     <p className="text-xs tracking-[0.3em] uppercase opacity-60">Talla</p>
                     <p className="text-3xl font-black">{s.size}</p>
                     <ul className="mt-3 text-sm space-y-1 font-mono">
@@ -85,9 +85,9 @@ export default function SizeGuideModal({
                   alt="Medidas frontales de la camisa talla XL"
                   loading="lazy"
                   decoding="async"
-                  className="w-full h-auto object-contain border border-black bg-white"
+                  className="w-full h-auto object-contain border border-white/25 bg-white"
                 />
-                <figcaption className="mt-3 text-sm tracking-[0.2em] uppercase text-neutral-600">
+                <figcaption className="mt-3 text-sm tracking-[0.2em] uppercase text-white/60">
                   Frente
                 </figcaption>
               </figure>
@@ -97,15 +97,15 @@ export default function SizeGuideModal({
                   alt="Medidas traseras de la camisa talla XL"
                   loading="lazy"
                   decoding="async"
-                  className="w-full h-auto object-contain border border-black bg-white"
+                  className="w-full h-auto object-contain border border-white/25 bg-white"
                 />
-                <figcaption className="mt-3 text-sm tracking-[0.2em] uppercase text-neutral-600">
+                <figcaption className="mt-3 text-sm tracking-[0.2em] uppercase text-white/60">
                   Espalda
                 </figcaption>
               </figure>
             </div>
 
-            <p className="mt-6 text-xs text-neutral-500">
+            <p className="mt-6 text-xs text-white/45">
               ±1cm de tolerancia. Para dudas, escríbenos por WhatsApp antes de apartar.
             </p>
             </div>
