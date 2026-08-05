@@ -237,3 +237,49 @@
 @utility glitch {
   animation: glitch-slide 6s steps(1, end) infinite;
 }
+
+@keyframes flicker-frenetic {
+  0%, 100% { opacity: 1; }
+  4% { opacity: 0.1; }
+  7% { opacity: 0.95; }
+  11% { opacity: 0.25; }
+  14% { opacity: 1; }
+  22% { opacity: 0.15; }
+  26% { opacity: 1; }
+  33% { opacity: 0.4; }
+  38% { opacity: 1; }
+  46% { opacity: 0.08; }
+  52% { opacity: 1; }
+  61% { opacity: 0.3; }
+  67% { opacity: 1; }
+  75% { opacity: 0.12; }
+  82% { opacity: 1; }
+  90% { opacity: 0.35; }
+  95% { opacity: 1; }
+}
+
+.animate-flicker-frenetic {
+  will-change: opacity;
+  animation: flicker-frenetic 0.55s steps(1, end) infinite;
+}
+
+@keyframes decor-drift {
+  0% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -22px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+.animate-decor-drift {
+  will-change: transform;
+  animation: decor-drift 18s ease-in-out infinite;
+}
+
+@keyframes logo-pulse {
+  0%, 100% { opacity: 0.92; filter: drop-shadow(0 0 12px rgba(255,255,255,0.25)); }
+  50% { opacity: 1; filter: drop-shadow(0 0 26px rgba(255,255,255,0.5)); }
+}
+
+.animate-logo-pulse {
+  will-change: opacity, filter;
+  animation: logo-pulse 3.4s ease-in-out infinite;
+}
