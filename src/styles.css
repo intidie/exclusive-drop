@@ -146,7 +146,12 @@
     font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
     background-color: var(--color-background);
     color: var(--color-foreground);
+    /* Evita la barra de desplazamiento horizontal intermitente
+       causada por elementos decorativos/animaciones fuera del viewport. */
+    overflow-x: clip;
+    max-width: 100vw;
   }
+
 }
 
 @keyframes ll-strobe {
