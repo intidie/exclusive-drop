@@ -14,7 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      orders: {
+        Row: {
+          access_token: string
+          amount_in_cents: number
+          created_at: string
+          currency: string
+          customer_email: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          id: string
+          product_name: string
+          product_slug: string
+          shipping_address: string | null
+          shipping_city: string | null
+          size: string
+          status: Database["public"]["Enums"]["order_status"]
+          updated_at: string
+          user_id: string | null
+          wompi_reference: string
+          wompi_transaction_id: string | null
+        }
+        Insert: {
+          access_token?: string
+          amount_in_cents: number
+          created_at?: string
+          currency?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          product_name: string
+          product_slug: string
+          shipping_address?: string | null
+          shipping_city?: string | null
+          size: string
+          status?: Database["public"]["Enums"]["order_status"]
+          updated_at?: string
+          user_id?: string | null
+          wompi_reference: string
+          wompi_transaction_id?: string | null
+        }
+        Update: {
+          access_token?: string
+          amount_in_cents?: number
+          created_at?: string
+          currency?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          product_name?: string
+          product_slug?: string
+          shipping_address?: string | null
+          shipping_city?: string | null
+          size?: string
+          status?: Database["public"]["Enums"]["order_status"]
+          updated_at?: string
+          user_id?: string | null
+          wompi_reference?: string
+          wompi_transaction_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +85,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      order_status: "pending" | "approved" | "declined" | "error"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +212,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      order_status: ["pending", "approved", "declined", "error"],
+    },
   },
 } as const
