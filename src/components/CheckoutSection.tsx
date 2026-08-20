@@ -1,8 +1,4 @@
-import { useState } from "react";
 import { motion } from "motion/react";
-import { waLink } from "@/lib/drop-data";
-import PurchaseInfoModal from "@/components/PurchaseInfoModal";
-
 
 const fadeUp = {
   initial: { opacity: 0, y: 40 },
@@ -12,25 +8,24 @@ const fadeUp = {
 };
 
 const METHODS = [
-  { tag: "Transferencia", title: "Nequi", desc: "Pago inmediato vía Nequi. Te enviamos el número al confirmar tu pedido." },
-  { tag: "Al recibir", title: "Pago Contraentrega", desc: "Paga en efectivo cuando recibas tu camisa. Disponible en ciudades principales de Colombia." },
-  { tag: "Internacional", title: "PayPal", desc: "Pago seguro desde cualquier parte del mundo en USD." },
-  { tag: "Billeteras", title: "Daviplata · Bancolombia · Wise", desc: "Transferencias desde billeteras digitales y bancos internacionales." },
-  { tag: "Crypto", title: "BTC · ETH · USDT", desc: "Aceptamos Bitcoin, Ethereum y stablecoins (USDT/USDC) en redes principales." },
-  { tag: "Envío Worldwide", title: "Envíos Internacionales", desc: "Enviamos a cualquier parte del mundo. Costo y tiempo se cotizan por WhatsApp según destino." },
+  { tag: "Wompi", title: "Tarjeta débito / crédito", desc: "Visa, Mastercard y Amex procesadas de forma segura por Wompi." },
+  { tag: "Wompi", title: "PSE", desc: "Débito directo desde tu cuenta bancaria en Colombia." },
+  { tag: "Wompi", title: "Nequi", desc: "Aprueba el pago desde tu app Nequi en segundos." },
+  { tag: "Wompi", title: "Botón Bancolombia", desc: "Paga con tu cuenta de ahorros o corriente Bancolombia." },
+  { tag: "Wompi", title: "Corresponsales y efectivo", desc: "Genera tu recibo y paga en efectivo en los puntos habilitados por Wompi." },
+  { tag: "Envíos", title: "Envío nacional", desc: "Cada camisa es hecha a mano: despachamos 1 semana después de la compra. El tiempo de entrega depende de tu región." },
 ];
 
 export default function CheckoutSection() {
-  const [buyOpen, setBuyOpen] = useState(false);
-
   return (
     <section id="checkout" className="bg-black text-white py-24 md:py-32 px-6 border-t border-white/10">
       <div className="max-w-5xl mx-auto">
         <motion.div {...fadeUp}>
           <p className="text-xs tracking-[0.3em] uppercase mb-3">Métodos de pago & envíos</p>
-          <h2 className="text-4xl md:text-6xl font-display tracking-wide">Paga como prefieras.</h2>
+          <h2 className="text-4xl md:text-6xl font-display tracking-wide">Paga seguro con Wompi.</h2>
           <p className="mt-4 text-sm md:text-base text-white/60 max-w-2xl">
-            Aceptamos pagos locales e internacionales: Nequi, Pago Contraentrega, PayPal, billeteras digitales y criptomonedas (BTC, ETH, USDT). Enviamos a Colombia y a todo el mundo.
+            Todos los pagos se procesan a través de la pasarela Wompi: tarjeta, PSE, Nequi, botón
+            Bancolombia y efectivo en corresponsales. Envíos únicamente a nivel nacional (Colombia).
           </p>
         </motion.div>
 
@@ -40,17 +35,15 @@ export default function CheckoutSection() {
           ))}
         </div>
 
-        <motion.div {...fadeUp} className="mt-12">
-          <button
-            type="button"
-            onClick={() => setBuyOpen(true)}
-            className="inline-flex items-center justify-center h-14 px-10 bg-black text-white text-sm tracking-[0.2em] uppercase font-semibold border border-white/25 hover:bg-white hover:text-black transition-all duration-300"
-          >
-            Confirmar compra
-          </button>
+        <motion.div {...fadeUp} className="mt-12 border border-white/25 p-6 md:p-8">
+          <p className="text-[10px] tracking-[0.3em] uppercase opacity-60">Aviso</p>
+          <h3 className="mt-2 text-2xl md:text-3xl font-display tracking-wide animate-pulse">
+            Próximamente envíos internacionales
+          </h3>
+          <p className="mt-3 text-sm text-white/60">
+            Por ahora todos los pedidos se despachan dentro de Colombia.
+          </p>
         </motion.div>
-        <PurchaseInfoModal open={buyOpen} onClose={() => setBuyOpen(false)} whatsappHref={waLink()} />
-
       </div>
     </section>
   );
