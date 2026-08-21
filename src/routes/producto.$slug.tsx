@@ -1,9 +1,9 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useState } from "react";
-import { getProduct, PRODUCTS, PRICE, ORIGINAL_PRICE, USD_TRM, SIZES, CONTACT, waLink, PRINT_SPEC } from "@/lib/drop-data";
+import { getProduct, PRODUCTS, PRICE, ORIGINAL_PRICE, USD_TRM, SIZES, CONTACT, PRINT_SPEC } from "@/lib/drop-data";
 import CountdownTimer from "@/components/CountdownTimer";
 import SizeGuideModal from "@/components/SizeGuideModal";
-import PurchaseInfoModal from "@/components/PurchaseInfoModal";
+import WompiCheckout from "@/components/WompiCheckout";
 
 
 const formatCOP = (n: number) =>
@@ -162,8 +162,8 @@ function ProductPage() {
           </button>
 
           <p className="text-xs text-white/55 leading-relaxed">
-            Pagos: Contraentrega · Nequi · PayPal · Daviplata · Bancolombia · Wise · BTC / ETH / USDT.
-            Envíos a Colombia y a todo el mundo.
+            Pago seguro con Wompi: tarjeta, PSE, Nequi, botón Bancolombia y efectivo.
+            Envíos solo a nivel nacional (Colombia) — próximamente internacionales.
           </p>
 
 
@@ -194,10 +194,12 @@ function ProductPage() {
       </section>
 
       <SizeGuideModal open={guideOpen} onClose={() => setGuideOpen(false)} />
-      <PurchaseInfoModal
+      <WompiCheckout
         open={buyOpen}
         onClose={() => setBuyOpen(false)}
-        whatsappHref={waLink(`Producto: ${product.name} — Talla ${size}`)}
+        productSlug={product.slug}
+        productName={product.name}
+        size={size}
       />
 
     </main>

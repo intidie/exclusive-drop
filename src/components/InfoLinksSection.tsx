@@ -6,7 +6,7 @@ const LINKS = [
     to: "/pagos" as const,
     tag: "Pagos & envíos",
     title: "Paga como prefieras",
-    desc: "Nequi, contraentrega, PayPal, billeteras y cripto. Envíos a Colombia y worldwide.",
+    desc: "Wompi: tarjeta, PSE, Nequi y Bancolombia. Envíos nacionales en Colombia.",
   },
   {
     to: "/terminos" as const,
