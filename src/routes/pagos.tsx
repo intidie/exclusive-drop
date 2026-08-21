@@ -9,10 +9,10 @@ export const Route = createFileRoute("/pagos")({
       {
         name: "description",
         content:
-          "Nequi, contraentrega, PayPal, billeteras digitales y cripto (BTC, ETH, USDT). Envíos a Colombia y a todo el mundo.",
+          "Pagos seguros con Wompi: tarjeta, PSE, Nequi y Bancolombia. Envíos nacionales en Colombia.",
       },
       { property: "og:title", content: "Métodos de pago y envíos — INTI(t)" },
-      { property: "og:description", content: "Pagos locales, internacionales y cripto. Envíos worldwide." },
+      { property: "og:description", content: "Pago seguro con Wompi. Envíos nacionales; próximamente internacionales." },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "/pagos" },
       { name: "twitter:card", content: "summary" },

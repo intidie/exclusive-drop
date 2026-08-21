@@ -10,15 +10,15 @@ const fadeUp = {
 const TERMS = [
   {
     t: "Pedidos y reservas",
-    d: "El pedido se confirma únicamente tras coordinar pago por WhatsApp. La reserva se mantiene por 24 horas; pasado ese tiempo la unidad vuelve a stock.",
+    d: "El pedido se confirma únicamente cuando el pago es aprobado por la pasarela Wompi. Mientras la transacción esté pendiente la unidad no queda reservada.",
   },
   {
     t: "Pagos",
-    d: "Aceptamos Nequi y Pago Contraentrega en Colombia. Para pagos internacionales: PayPal, Wise, billeteras digitales y criptomonedas (BTC, ETH, USDT/USDC). El precio referencia se calcula a una TRM de 4.000 COP/USD; el valor final en cripto/USD se confirma al momento del pago.",
+    d: "Todos los pagos se procesan exclusivamente a través de Wompi: tarjeta débito/crédito, PSE, Nequi, botón Bancolombia y efectivo en corresponsales. No aceptamos otros medios de pago. El monto es calculado y validado en nuestro servidor; nunca manejamos los datos de tu tarjeta.",
   },
   {
     t: "Envíos",
-    d: "Envío nacional en Colombia (3-7 días hábiles) y envíos internacionales a cualquier parte del mundo (7-21 días hábiles según destino). El comprador asume el costo del envío y posibles impuestos/aduanas del país de destino, salvo indicación contraria.",
+    d: "Solo envíos nacionales dentro de Colombia. Cada camisa es realizada a mano, por lo que el despacho se hace 1 semana después de la compra. El tiempo de entrega adicional depende de la región del país donde te encuentres. PRÓXIMAMENTE ENVÍOS INTERNACIONALES.",
   },
   {
     t: "Cambios y devoluciones",
@@ -30,9 +30,10 @@ const TERMS = [
   },
   {
     t: "Datos personales",
-    d: "Los datos compartidos por WhatsApp (nombre, dirección, contacto) se usan únicamente para procesar y enviar tu pedido. No se comparten con terceros ajenos al envío.",
+    d: "Los datos de envío (nombre, teléfono, dirección, ciudad) se usan únicamente para procesar y despachar tu pedido. Los datos de pago son gestionados directamente por Wompi y nunca se almacenan en nuestros servidores.",
   },
 ];
+
 
 export default function TermsSection() {
   return (
