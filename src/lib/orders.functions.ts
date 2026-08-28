@@ -88,7 +88,7 @@ export const getOrderStatus = createServerFn({ method: "POST" })
     const orderId = typeof i["orderId"] === "string" ? i["orderId"] : "";
     const accessToken = typeof i["accessToken"] === "string" ? i["accessToken"] : "";
     const uuid = /^[0-9a-f-]{36}$/i;
-    if (!uuid.test(orderId) || !uuid.test(accessToken)) throw new PublicError("Solicitud inválida.");
+    if (!uuid.test(orderId) || accessToken.length < 8) throw new PublicError("Solicitud inválida.");
     return { orderId, accessToken };
   })
   .handler(async ({ data }) => {
@@ -96,13 +96,14 @@ export const getOrderStatus = createServerFn({ method: "POST" })
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { data: order } = await supabaseAdmin
         .from("orders")
-        .select("status, wompi_reference")
+        .select("status, reference, access_token")
         .eq("id", data.orderId)
-        .eq("access_token", data.accessToken)
         .maybeSingle();
 
-      if (!order) throw new PublicError("Pedido no encontrado.");
-      return { status: order.status as string, reference: order.wompi_reference as string };
+      const secret = (order as { access_token?: string } | null)?.access_token ?? order?.reference;
+      if (!order || secret !== data.accessToken) throw new PublicError("Pedido no encontrado.");
+      return { status: order.status as string, reference: order.reference as string };
+
     } catch (err) {
       if (err instanceof PublicError) throw err;
       console.error("getOrderStatus", err);
