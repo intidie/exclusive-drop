@@ -62,7 +62,7 @@ export const Route = createFileRoute("/api/public/wompi-webhook")({
           const { data: order } = await supabaseAdmin
             .from("orders")
             .select("id, amount_in_cents, status")
-            .eq("wompi_reference", reference)
+            .eq("reference", reference)
             .maybeSingle();
 
           if (!order) return new Response("ok");
