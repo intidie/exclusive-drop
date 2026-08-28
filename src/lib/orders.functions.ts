@@ -23,25 +23,39 @@ export const createWompiSignature = createServerFn({ method: "POST" })
       const reference = newReference();
       const currency = "COP";
 
-      const { data: order, error } = await supabaseAdmin
+      // Explicit camelCase -> snake_case mapping. NOT NULL fields always present.
+      const row = {
+        reference,
+        product_slug: product.slug,
+        product_name: product.name,
+        size: data.size,
+        amount_in_cents: amountInCents,
+        currency,
+        status: "pending" as const,
+        customer_name: data.customerName,
+        customer_phone: data.customerPhone,
+        shipping_city: data.shippingCity,
+        shipping_address: data.shippingAddress,
+      };
+
+      let orderId: string | undefined;
+      let accessToken: string | undefined;
+
+      const inserted = await supabaseAdmin
         .from("orders")
-        .insert({
-          product_slug: product.slug,
-          product_name: product.name,
-          size: data.size,
-          amount_in_cents: amountInCents,
-          currency,
-          status: "pending",
-          wompi_reference: reference,
-          customer_name: data.customerName,
-          customer_phone: data.customerPhone,
-          shipping_city: data.shippingCity,
-          shipping_address: data.shippingAddress,
-        })
+        .insert(row)
         .select("id, access_token")
         .single();
 
-      if (error || !order) throw new Error(error?.message ?? "insert failed");
+      if (inserted.error) {
+        // Schemas without access_token: retry with the minimal projection.
+        const retry = await supabaseAdmin.from("orders").insert(row).select("id").single();
+        if (retry.error || !retry.data) throw new Error(retry.error?.message ?? "insert failed");
+        orderId = retry.data.id as string;
+      } else {
+        orderId = inserted.data.id as string;
+        accessToken = inserted.data.access_token as string;
+      }
 
       const signature = await integritySignature(
         reference,
@@ -51,14 +65,15 @@ export const createWompiSignature = createServerFn({ method: "POST" })
       );
 
       return {
-        orderId: order.id as string,
-        accessToken: order.access_token as string,
+        orderId,
+        accessToken: accessToken ?? reference,
         reference,
         amountInCents,
         currency,
         signature,
         publicKey: requireEnv("WOMPI_PUBLIC_KEY"),
       };
+
     } catch (err) {
       if (err instanceof PublicError) throw err;
       console.error("createWompiSignature", err);
