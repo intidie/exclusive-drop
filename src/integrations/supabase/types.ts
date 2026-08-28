@@ -26,13 +26,13 @@ export type Database = {
           id: string
           product_name: string
           product_slug: string
+          reference: string
           shipping_address: string | null
           shipping_city: string | null
           size: string
           status: Database["public"]["Enums"]["order_status"]
           updated_at: string
           user_id: string | null
-          wompi_reference: string
           wompi_transaction_id: string | null
         }
         Insert: {
@@ -46,13 +46,13 @@ export type Database = {
           id?: string
           product_name: string
           product_slug: string
+          reference: string
           shipping_address?: string | null
           shipping_city?: string | null
           size: string
           status?: Database["public"]["Enums"]["order_status"]
           updated_at?: string
           user_id?: string | null
-          wompi_reference: string
           wompi_transaction_id?: string | null
         }
         Update: {
@@ -66,13 +66,13 @@ export type Database = {
           id?: string
           product_name?: string
           product_slug?: string
+          reference?: string
           shipping_address?: string | null
           shipping_city?: string | null
           size?: string
           status?: Database["public"]["Enums"]["order_status"]
           updated_at?: string
           user_id?: string | null
-          wompi_reference?: string
           wompi_transaction_id?: string | null
         }
         Relationships: []
