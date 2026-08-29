@@ -101,7 +101,7 @@ export default function WompiCheckout({ open, onClose, productSlug, productName,
         amountInCents: res.amountInCents,
         reference: res.reference,
         publicKey,
-        signature: { integrity: res.signature },
+        ...(res.signature ? { signature: { integrity: res.signature } } : {}),
         redirectUrl: `${window.location.origin}/producto/${productSlug}`,
       }).open(() => {
         /* El estado real llega por webhook; aquí no se confía en el callback. */
