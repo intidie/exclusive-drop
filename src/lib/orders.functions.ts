@@ -4,7 +4,7 @@ import {
   integritySignature,
   newReference,
   PublicError,
-  requireEnv,
+  
   validateDraft,
 } from "@/lib/wompi.server";
 import { getProduct } from "@/lib/drop-data";
