@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { supabaseBrowser } from "@/lib/supabase-browser";
-import { CONTACT, PRICE, waLink } from "@/lib/drop-data";
+import { CONTACT, waLink } from "@/lib/drop-data";
 
 type Props = {
   open: boolean;
@@ -50,41 +49,47 @@ export default function WompiCheckout({ open, onClose, productSlug, productName,
     setError(null);
     setBusy(true);
     const fd = new FormData(e.currentTarget);
-    const amountInCents = PRICE * 100;
-    const currency = "COP";
 
     try {
-      const publicKey = (import.meta.env["VITE_WOMPI_PUBLIC_KEY"] as string | undefined) ?? "";
-
-      const { data, error: dbError } = await supabaseBrowser
-        .from("orders")
-        .insert({
-          product_slug: productSlug,
-          product_name: productName,
+      // El precio, la referencia y la firma de integridad los calcula el
+      // servidor (ver src/routes/api.checkout.ts). El cliente nunca decide
+      // cuánto se cobra.
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productSlug,
           size,
-          amount_in_cents: amountInCents,
-          currency,
-          status: "pending",
-          reference: crypto.randomUUID(),
-          customer_name: String(fd.get("name") ?? ""),
-          customer_phone: String(fd.get("phone") ?? ""),
-          shipping_city: String(fd.get("city") ?? ""),
-          shipping_address: String(fd.get("address") ?? ""),
-        })
-        .select("id")
-        .single();
+          name: String(fd.get("name") ?? ""),
+          phone: String(fd.get("phone") ?? ""),
+          city: String(fd.get("city") ?? ""),
+          address: String(fd.get("address") ?? ""),
+        }),
+      });
 
-      if (dbError || !data) throw new Error("No pudimos registrar tu pedido.");
+      const checkout = (await res.json().catch(() => null)) as {
+        reference?: string;
+        amountInCents?: number;
+        currency?: string;
+        publicKey?: string;
+        signature?: string;
+        error?: string;
+      } | null;
+
+      if (!res.ok || !checkout?.reference || !checkout.signature) {
+        throw new Error(checkout?.error ?? "No pudimos registrar tu pedido.");
+      }
 
       await loadWidget();
       const Widget = window.WidgetCheckout;
       if (!Widget) throw new Error("No pudimos cargar el checkout de Wompi.");
 
       new Widget({
-        currency,
-        amountInCents,
-        reference: data.id as string,
-        publicKey,
+        currency: checkout.currency,
+        amountInCents: checkout.amountInCents,
+        reference: checkout.reference,
+        publicKey: checkout.publicKey,
+        signature: { integrity: checkout.signature },
         redirectUrl: `${window.location.origin}/producto/${productSlug}`,
       }).open(() => {
         setPhase("sent");
