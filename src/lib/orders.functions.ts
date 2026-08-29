@@ -4,7 +4,7 @@ import {
   integritySignature,
   newReference,
   PublicError,
-  requireEnv,
+  
   validateDraft,
 } from "@/lib/wompi.server";
 import { getProduct } from "@/lib/drop-data";
@@ -57,12 +57,11 @@ export const createWompiSignature = createServerFn({ method: "POST" })
         accessToken = inserted.data.access_token as string;
       }
 
-      const signature = await integritySignature(
-        reference,
-        amountInCents,
-        currency,
-        requireEnv("WOMPI_INTEGRITY_SECRET"),
-      );
+      // La firma de integridad solo se genera si el secreto está configurado.
+      const integritySecret = process.env["WOMPI_INTEGRITY_SECRET"];
+      const signature = integritySecret
+        ? await integritySignature(reference, amountInCents, currency, integritySecret)
+        : null;
 
       return {
         orderId,
@@ -71,7 +70,7 @@ export const createWompiSignature = createServerFn({ method: "POST" })
         amountInCents,
         currency,
         signature,
-        publicKey: requireEnv("WOMPI_PUBLIC_KEY"),
+        publicKey: process.env["WOMPI_PUBLIC_KEY"] ?? "",
       };
 
     } catch (err) {
