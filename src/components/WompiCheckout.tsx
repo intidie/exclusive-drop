@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { useServerFn } from "@tanstack/react-start";
-import { createWompiSignature, getOrderStatus } from "@/lib/orders.functions";
-import { CONTACT, waLink } from "@/lib/drop-data";
+import { supabase } from "@/integrations/supabase/client";
+import { CONTACT, PRICE, waLink } from "@/lib/drop-data";
 
 type Props = {
   open: boolean;
@@ -12,7 +11,7 @@ type Props = {
   size: string;
 };
 
-type Phase = "form" | "waiting" | "approved" | "failed";
+type Phase = "form" | "sent";
 
 declare global {
   interface Window {
@@ -28,87 +27,71 @@ function loadWidget(): Promise<void> {
     s.src = "https://checkout.wompi.co/widget.js";
     s.async = true;
     s.onload = () => resolve();
-    s.onerror = () => reject(new Error("widget"));
+    s.onerror = () => reject(new Error("No pudimos cargar el checkout de Wompi."));
     document.head.appendChild(s);
   });
 }
 
 export default function WompiCheckout({ open, onClose, productSlug, productName, size }: Props) {
-  const createSignature = useServerFn(createWompiSignature);
-  const checkStatus = useServerFn(getOrderStatus);
-
   const [phase, setPhase] = useState<Phase>("form");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const orderRef = useRef<{ orderId: string; accessToken: string } | null>(null);
 
   useEffect(() => {
     if (!open) {
       setPhase("form");
       setError(null);
       setBusy(false);
-      orderRef.current = null;
     }
   }, [open]);
-
-  // Polling seguro del estado real (lo escribe el webhook con Service Role).
-  useEffect(() => {
-    if (phase !== "waiting" || !orderRef.current) return;
-    let alive = true;
-    const id = setInterval(async () => {
-      try {
-        const res = await checkStatus({ data: orderRef.current! });
-        if (!alive) return;
-        if (res.status === "approved") setPhase("approved");
-        else if (res.status === "declined" || res.status === "error") setPhase("failed");
-      } catch {
-        /* reintenta en el siguiente ciclo */
-      }
-    }, 3000);
-    return () => {
-      alive = false;
-      clearInterval(id);
-    };
-  }, [phase, checkStatus]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     setBusy(true);
     const fd = new FormData(e.currentTarget);
-    try {
-      const res = await createSignature({
-        data: {
-          productSlug,
-          size,
-          customerName: String(fd.get("name") ?? ""),
-          customerPhone: String(fd.get("phone") ?? ""),
-          shippingCity: String(fd.get("city") ?? ""),
-          shippingAddress: String(fd.get("address") ?? ""),
-        },
-      });
-      orderRef.current = { orderId: res.orderId, accessToken: res.accessToken };
-      setPhase("waiting");
+    const amountInCents = PRICE * 100;
+    const currency = "COP";
 
-      const publicKey = res.publicKey || (import.meta.env["VITE_WOMPI_PUBLIC_KEY"] as string | undefined);
+    try {
+      const publicKey = import.meta.env["VITE_WOMPI_PUBLIC_KEY"] as string | undefined;
       if (!publicKey) throw new Error("Falta la llave pública de Wompi.");
+
+      const { data, error: dbError } = await supabase
+        .from("orders")
+        .insert({
+          product_slug: productSlug,
+          product_name: productName,
+          size,
+          amount_in_cents: amountInCents,
+          currency,
+          status: "pending",
+          reference: crypto.randomUUID(),
+          customer_name: String(fd.get("name") ?? ""),
+          customer_phone: String(fd.get("phone") ?? ""),
+          shipping_city: String(fd.get("city") ?? ""),
+          shipping_address: String(fd.get("address") ?? ""),
+        })
+        .select("id")
+        .single();
+
+      if (dbError || !data) throw new Error("No pudimos registrar tu pedido.");
 
       await loadWidget();
       const Widget = window.WidgetCheckout;
-      if (!Widget) throw new Error("widget");
+      if (!Widget) throw new Error("No pudimos cargar el checkout de Wompi.");
+
       new Widget({
-        currency: res.currency,
-        amountInCents: res.amountInCents,
-        reference: res.reference,
+        currency,
+        amountInCents,
+        reference: data.id as string,
         publicKey,
-        ...(res.signature ? { signature: { integrity: res.signature } } : {}),
         redirectUrl: `${window.location.origin}/producto/${productSlug}`,
       }).open(() => {
-        /* El estado real llega por webhook; aquí no se confía en el callback. */
+        setPhase("sent");
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "No pudimos iniciar el pago.");
-      setPhase("form");
     } finally {
       setBusy(false);
     }
@@ -157,8 +140,7 @@ export default function WompiCheckout({ open, onClose, productSlug, productName,
                     {productName} · Talla {size}
                   </h3>
                   <p className="text-xs text-white/60">
-                    El valor a pagar lo calcula nuestro servidor. Paga con tarjeta, PSE, Nequi o
-                    Bancolombia a través de Wompi.
+                    Paga con tarjeta, PSE, Nequi o Bancolombia a través de Wompi.
                   </p>
                   <input name="name" required maxLength={80} placeholder="Nombre completo" className={field} />
                   <input name="phone" required maxLength={25} placeholder="Teléfono / WhatsApp" className={field} />
@@ -179,47 +161,22 @@ export default function WompiCheckout({ open, onClose, productSlug, productName,
                 </form>
               )}
 
-              {phase === "waiting" && (
-                <div className="space-y-3 py-4">
-                  <h3 className="text-2xl font-display tracking-wide animate-pulse">Esperando confirmación…</h3>
-                  <p className="text-sm text-white/70">
-                    Completa el pago en la ventana de Wompi. Confirmamos automáticamente cuando el
-                    banco apruebe la transacción. No cierres esta ventana.
-                  </p>
-                </div>
-              )}
-
-              {phase === "approved" && (
+              {phase === "sent" && (
                 <div className="space-y-4 py-4">
-                  <h3 className="text-3xl font-display tracking-wide">¡Pago aprobado!</h3>
+                  <h3 className="text-3xl font-display tracking-wide">Pedido registrado</h3>
                   <p className="text-sm text-white/70">
-                    Tu pedido de {productName} (talla {size}) quedó registrado. Tu camisa se elabora a
-                    mano y se despacha 1 semana después de la compra.
+                    Tu pedido de {productName} (talla {size}) quedó registrado. Si el pago fue
+                    aprobado, tu camisa se elabora a mano y se despacha 1 semana después de la
+                    compra. Cualquier duda escríbenos a {CONTACT.whatsappDisplay}.
                   </p>
                   <a
-                    href={waLink(`Pedido pagado: ${productName} — Talla ${size}`)}
+                    href={waLink(`Pedido: ${productName} — Talla ${size}`)}
                     target="_blank"
                     rel="noreferrer"
                     className="block text-center py-4 text-xs tracking-[0.2em] uppercase font-semibold border border-white/25 hover:bg-white hover:text-black transition-colors"
                   >
                     Coordinar entrega por WhatsApp
                   </a>
-                </div>
-              )}
-
-              {phase === "failed" && (
-                <div className="space-y-4 py-4">
-                  <h3 className="text-2xl font-display tracking-wide">Pago no completado</h3>
-                  <p className="text-sm text-white/70">
-                    La transacción fue rechazada o falló. Puedes intentarlo de nuevo o escribirnos a{" "}
-                    {CONTACT.whatsappDisplay}.
-                  </p>
-                  <button
-                    onClick={() => setPhase("form")}
-                    className="w-full py-4 text-xs tracking-[0.2em] uppercase font-semibold border border-white/25 hover:bg-white hover:text-black transition-colors"
-                  >
-                    Reintentar
-                  </button>
                 </div>
               )}
             </div>
