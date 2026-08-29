@@ -14,7 +14,6 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as PagosRouteImport } from './routes/pagos'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductoSlugRouteImport } from './routes/producto.$slug'
-import { Route as ApiPublicWompiWebhookRouteImport } from './routes/api/public/wompi-webhook'
 
 const TerminosRoute = TerminosRouteImport.update({
   id: '/terminos',
@@ -41,11 +40,6 @@ const ProductoSlugRoute = ProductoSlugRouteImport.update({
   path: '/producto/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicWompiWebhookRoute = ApiPublicWompiWebhookRouteImport.update({
-  id: '/api/public/wompi-webhook',
-  path: '/api/public/wompi-webhook',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -53,7 +47,6 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terminos': typeof TerminosRoute
   '/producto/$slug': typeof ProductoSlugRoute
-  '/api/public/wompi-webhook': typeof ApiPublicWompiWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -61,7 +54,6 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terminos': typeof TerminosRoute
   '/producto/$slug': typeof ProductoSlugRoute
-  '/api/public/wompi-webhook': typeof ApiPublicWompiWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -70,25 +62,12 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terminos': typeof TerminosRoute
   '/producto/$slug': typeof ProductoSlugRoute
-  '/api/public/wompi-webhook': typeof ApiPublicWompiWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/pagos'
-    | '/sitemap.xml'
-    | '/terminos'
-    | '/producto/$slug'
-    | '/api/public/wompi-webhook'
+  fullPaths: '/' | '/pagos' | '/sitemap.xml' | '/terminos' | '/producto/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/pagos'
-    | '/sitemap.xml'
-    | '/terminos'
-    | '/producto/$slug'
-    | '/api/public/wompi-webhook'
+  to: '/' | '/pagos' | '/sitemap.xml' | '/terminos' | '/producto/$slug'
   id:
     | '__root__'
     | '/'
@@ -96,7 +75,6 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terminos'
     | '/producto/$slug'
-    | '/api/public/wompi-webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -105,7 +83,6 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TerminosRoute: typeof TerminosRoute
   ProductoSlugRoute: typeof ProductoSlugRoute
-  ApiPublicWompiWebhookRoute: typeof ApiPublicWompiWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -145,13 +122,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductoSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/wompi-webhook': {
-      id: '/api/public/wompi-webhook'
-      path: '/api/public/wompi-webhook'
-      fullPath: '/api/public/wompi-webhook'
-      preLoaderRoute: typeof ApiPublicWompiWebhookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -161,7 +131,6 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TerminosRoute: TerminosRoute,
   ProductoSlugRoute: ProductoSlugRoute,
-  ApiPublicWompiWebhookRoute: ApiPublicWompiWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
