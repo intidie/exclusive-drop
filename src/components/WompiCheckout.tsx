@@ -90,6 +90,9 @@ export default function WompiCheckout({ open, onClose, productSlug, productName,
       orderRef.current = { orderId: res.orderId, accessToken: res.accessToken };
       setPhase("waiting");
 
+      const publicKey = res.publicKey || (import.meta.env["VITE_WOMPI_PUBLIC_KEY"] as string | undefined);
+      if (!publicKey) throw new Error("Falta la llave pública de Wompi.");
+
       await loadWidget();
       const Widget = window.WidgetCheckout;
       if (!Widget) throw new Error("widget");
@@ -97,8 +100,9 @@ export default function WompiCheckout({ open, onClose, productSlug, productName,
         currency: res.currency,
         amountInCents: res.amountInCents,
         reference: res.reference,
-        publicKey: res.publicKey,
+        publicKey,
         signature: { integrity: res.signature },
+        redirectUrl: `${window.location.origin}/producto/${productSlug}`,
       }).open(() => {
         /* El estado real llega por webhook; aquí no se confía en el callback. */
       });
