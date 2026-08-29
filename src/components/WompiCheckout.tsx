@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 import { CONTACT, PRICE, waLink } from "@/lib/drop-data";
 
 type Props = {
@@ -56,7 +56,7 @@ export default function WompiCheckout({ open, onClose, productSlug, productName,
     try {
       const publicKey = (import.meta.env["VITE_WOMPI_PUBLIC_KEY"] as string | undefined) ?? "";
 
-      const { data, error: dbError } = await supabase
+      const { data, error: dbError } = await supabaseBrowser
         .from("orders")
         .insert({
           product_slug: productSlug,
