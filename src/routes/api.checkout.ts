@@ -56,8 +56,8 @@ export const Route = createFileRoute("/api/checkout")({
 
         const amountInCents = PRICE * 100;
 
-        const integritySecret = process.env["WOMPI_INTEGRITY_SECRET"];
-        const publicKey = process.env["VITE_WOMPI_PUBLIC_KEY"] ?? process.env["WOMPI_PUBLIC_KEY"];
+        const integritySecret = process.env["WOMPI_INTEGRITY_SECRET"]?.trim();
+        const publicKey = (process.env["VITE_WOMPI_PUBLIC_KEY"] ?? process.env["WOMPI_PUBLIC_KEY"])?.trim();
         if (!integritySecret || !publicKey) {
           console.error("[checkout] Faltan WOMPI_INTEGRITY_SECRET o VITE_WOMPI_PUBLIC_KEY.");
           return jsonResponse({ error: "El pago no está disponible en este momento." }, 500);

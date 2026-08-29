@@ -2,5 +2,21 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "bun run build",
   "installCommand": "bun install",
-  "framework": null
+  "framework": null,
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://checkout.wompi.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co https://checkout.wompi.co https://production.wompi.co https://sandbox.wompi.co; frame-src https://checkout.wompi.co; form-action 'self' https://checkout.wompi.co; base-uri 'self'; frame-ancestors 'self'; object-src 'none'"
+        },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy", "value": "geolocation=(), camera=(), microphone=(), payment=(self \"https://checkout.wompi.co\")" },
+        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" }
+      ]
+    }
+  ]
 }
