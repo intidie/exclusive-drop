@@ -54,8 +54,7 @@ export default function WompiCheckout({ open, onClose, productSlug, productName,
     const currency = "COP";
 
     try {
-      const publicKey = import.meta.env["VITE_WOMPI_PUBLIC_KEY"] as string | undefined;
-      if (!publicKey) throw new Error("Falta la llave pública de Wompi.");
+      const publicKey = (import.meta.env["VITE_WOMPI_PUBLIC_KEY"] as string | undefined) ?? "";
 
       const { data, error: dbError } = await supabase
         .from("orders")
