@@ -7,8 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
@@ -16,64 +14,150 @@ export type Database = {
     Tables: {
       orders: {
         Row: {
-          access_token: string
           amount_in_cents: number
-          created_at: string
-          currency: string
+          created_at: string | null
+          currency: string | null
           customer_email: string | null
           customer_name: string | null
           customer_phone: string | null
+          email: string | null
           id: string
-          product_name: string
-          product_slug: string
+          items: Json
           reference: string
           shipping_address: string | null
           shipping_city: string | null
-          size: string
-          status: Database["public"]["Enums"]["order_status"]
+          shipping_cop: number
+          shipping_department: string | null
+          status: string | null
+          subtotal_cop: number
           updated_at: string
-          user_id: string | null
           wompi_transaction_id: string | null
         }
         Insert: {
-          access_token?: string
           amount_in_cents: number
-          created_at?: string
-          currency?: string
+          created_at?: string | null
+          currency?: string | null
           customer_email?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          email?: string | null
           id?: string
-          product_name: string
-          product_slug: string
+          items?: Json
           reference: string
           shipping_address?: string | null
           shipping_city?: string | null
-          size: string
-          status?: Database["public"]["Enums"]["order_status"]
+          shipping_cop?: number
+          shipping_department?: string | null
+          status?: string | null
+          subtotal_cop?: number
           updated_at?: string
-          user_id?: string | null
           wompi_transaction_id?: string | null
         }
         Update: {
-          access_token?: string
           amount_in_cents?: number
-          created_at?: string
-          currency?: string
+          created_at?: string | null
+          currency?: string | null
           customer_email?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          email?: string | null
           id?: string
-          product_name?: string
-          product_slug?: string
+          items?: Json
           reference?: string
           shipping_address?: string | null
           shipping_city?: string | null
-          size?: string
-          status?: Database["public"]["Enums"]["order_status"]
+          shipping_cop?: number
+          shipping_department?: string | null
+          status?: string | null
+          subtotal_cop?: number
           updated_at?: string
-          user_id?: string | null
           wompi_transaction_id?: string | null
+        }
+        Relationships: []
+      }
+      product_sizes: {
+        Row: {
+          extra_price_cop: number
+          id: string
+          product_id: string
+          size: string
+          stock: number
+        }
+        Insert: {
+          extra_price_cop?: number
+          id?: string
+          product_id: string
+          size: string
+          stock?: number
+        }
+        Update: {
+          extra_price_cop?: number
+          id?: string
+          product_id?: string
+          size?: string
+          stock?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_sizes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          image_back_url: string | null
+          image_front_url: string | null
+          name: string
+          price_cop: number
+          slug: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_back_url?: string | null
+          image_front_url?: string | null
+          name: string
+          price_cop: number
+          slug: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_back_url?: string | null
+          image_front_url?: string | null
+          name?: string
+          price_cop?: number
+          slug?: string
+        }
+        Relationships: []
+      }
+      shipping_zones: {
+        Row: {
+          department: string
+          id: string
+          shipping_cop: number
+        }
+        Insert: {
+          department: string
+          id?: string
+          shipping_cop: number
+        }
+        Update: {
+          department?: string
+          id?: string
+          shipping_cop?: number
         }
         Relationships: []
       }
@@ -82,10 +166,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      decrement_stock_if_available: {
+        Args: { p_qty: number; p_size_id: string }
+        Returns: boolean
+      }
+      increment_stock: {
+        Args: { p_qty: number; p_size_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
-      order_status: "pending" | "approved" | "declined" | "error"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -212,8 +303,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      order_status: ["pending", "approved", "declined", "error"],
-    },
+    Enums: {},
   },
 } as const

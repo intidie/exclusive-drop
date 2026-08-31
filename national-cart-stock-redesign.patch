@@ -1,0 +1,823 @@
+diff --git a/src/components/WompiCheckout.tsx b/src/components/WompiCheckout.tsx
+index 8a0b250..c4a21e2 100644
+--- a/src/components/WompiCheckout.tsx
++++ b/src/components/WompiCheckout.tsx
+@@ -31,16 +31,33 @@ function loadWidget(): Promise<void> {
+   });
+ }
+ 
++// Departamentos con tarifa de envío conocida en Supabase (shipping_zones).
++// Si agregas más allá en la base de datos, agrégalos aquí también para que
++// aparezcan en el selector (el precio real siempre lo calcula el servidor).
++const DEPARTMENTS = [
++  "Bogotá D.C.",
++  "Cundinamarca",
++  "Antioquia",
++  "Valle del Cauca",
++  "Atlántico",
++  "Santander",
++  "Otro",
++];
++
+ export default function WompiCheckout({ open, onClose, productSlug, productName, size }: Props) {
+   const [phase, setPhase] = useState<Phase>("form");
+   const [error, setError] = useState<string | null>(null);
+   const [busy, setBusy] = useState(false);
++  const [totals, setTotals] = useState<{ subtotalCop: number; shippingCop: number; totalCop: number } | null>(
++    null,
++  );
+ 
+   useEffect(() => {
+     if (!open) {
+       setPhase("form");
+       setError(null);
+       setBusy(false);
++      setTotals(null);
+     }
+   }, [open]);
+ 
+@@ -51,17 +68,18 @@ export default function WompiCheckout({ open, onClose, productSlug, productName,
+     const fd = new FormData(e.currentTarget);
+ 
+     try {
+-      // El precio, la referencia y la firma de integridad los calcula el
+-      // servidor (ver src/routes/api.checkout.ts). El cliente nunca decide
+-      // cuánto se cobra.
++      // El precio, el stock, la referencia y la firma de integridad los
++      // calcula el servidor (ver src/routes/api.checkout.ts). El cliente
++      // nunca decide cuánto se cobra ni descuenta el inventario.
+       const res = await fetch("/api/checkout", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({
+-          productSlug,
+-          size,
++          items: [{ slug: productSlug, size, qty: 1 }],
+           name: String(fd.get("name") ?? ""),
+           phone: String(fd.get("phone") ?? ""),
++          email: String(fd.get("email") ?? ""),
++          department: String(fd.get("department") ?? ""),
+           city: String(fd.get("city") ?? ""),
+           address: String(fd.get("address") ?? ""),
+         }),
+@@ -73,6 +91,9 @@ export default function WompiCheckout({ open, onClose, productSlug, productName,
+         currency?: string;
+         publicKey?: string;
+         signature?: string;
++        subtotalCop?: number;
++        shippingCop?: number;
++        totalCop?: number;
+         error?: string;
+       } | null;
+ 
+@@ -80,6 +101,14 @@ export default function WompiCheckout({ open, onClose, productSlug, productName,
+         throw new Error(checkout?.error ?? "No pudimos registrar tu pedido.");
+       }
+ 
++      if (checkout.subtotalCop != null && checkout.shippingCop != null && checkout.totalCop != null) {
++        setTotals({
++          subtotalCop: checkout.subtotalCop,
++          shippingCop: checkout.shippingCop,
++          totalCop: checkout.totalCop,
++        });
++      }
++
+       await loadWidget();
+       const Widget = window.WidgetCheckout;
+       if (!Widget) throw new Error("No pudimos cargar el checkout de Wompi.");
+@@ -148,6 +177,17 @@ export default function WompiCheckout({ open, onClose, productSlug, productName,
+                   </p>
+                   <input name="name" required maxLength={80} placeholder="Nombre completo" className={field} />
+                   <input name="phone" required maxLength={25} placeholder="Teléfono / WhatsApp" className={field} />
++                  <input name="email" type="email" maxLength={120} placeholder="Correo (opcional)" className={field} />
++                  <select name="department" required defaultValue="" className={field}>
++                    <option value="" disabled>
++                      Departamento
++                    </option>
++                    {DEPARTMENTS.map((d) => (
++                      <option key={d} value={d}>
++                        {d}
++                      </option>
++                    ))}
++                  </select>
+                   <input name="city" required maxLength={60} placeholder="Ciudad" className={field} />
+                   <input name="address" required maxLength={160} placeholder="Dirección de envío" className={field} />
+                   {error && <p className="text-xs text-red-400">{error}</p>}
+@@ -160,7 +200,8 @@ export default function WompiCheckout({ open, onClose, productSlug, productName,
+                   </button>
+                   <p className="text-[10px] text-white/45 leading-relaxed">
+                     Envío nacional: tu camisa se hace a mano y se despacha 1 semana después de la
+-                    compra. El tiempo de entrega varía según tu región.
++                    compra. El costo de envío se calcula según tu departamento y es gratis en
++                    compras superiores a $250.000. El tiempo de entrega varía según tu región.
+                   </p>
+                 </form>
+               )}
+@@ -168,6 +209,22 @@ export default function WompiCheckout({ open, onClose, productSlug, productName,
+               {phase === "sent" && (
+                 <div className="space-y-4 py-4">
+                   <h3 className="text-3xl font-display tracking-wide">Pedido registrado</h3>
++                  {totals && (
++                    <div className="text-sm text-white/70 space-y-1 border-t border-white/10 pt-3">
++                      <div className="flex justify-between">
++                        <span>Subtotal</span>
++                        <span>${totals.subtotalCop.toLocaleString("es-CO")}</span>
++                      </div>
++                      <div className="flex justify-between">
++                        <span>Envío</span>
++                        <span>{totals.shippingCop === 0 ? "Gratis" : `$${totals.shippingCop.toLocaleString("es-CO")}`}</span>
++                      </div>
++                      <div className="flex justify-between font-semibold text-white">
++                        <span>Total</span>
++                        <span>${totals.totalCop.toLocaleString("es-CO")}</span>
++                      </div>
++                    </div>
++                  )}
+                   <p className="text-sm text-white/70">
+                     Tu pedido de {productName} (talla {size}) quedó registrado. Si el pago fue
+                     aprobado, tu camisa se elabora a mano y se despacha 1 semana después de la
+diff --git a/src/integrations/supabase/types.ts b/src/integrations/supabase/types.ts
+index b0c6b4b..3fa690b 100644
+--- a/src/integrations/supabase/types.ts
++++ b/src/integrations/supabase/types.ts
+@@ -7,8 +7,6 @@ export type Json =
+   | Json[]
+ 
+ export type Database = {
+-  // Allows to automatically instantiate createClient with right options
+-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+   __InternalSupabase: {
+     PostgrestVersion: "14.5"
+   }
+@@ -16,76 +14,169 @@ export type Database = {
+     Tables: {
+       orders: {
+         Row: {
+-          access_token: string
+           amount_in_cents: number
+-          created_at: string
+-          currency: string
++          created_at: string | null
++          currency: string | null
+           customer_email: string | null
+           customer_name: string | null
+           customer_phone: string | null
++          email: string | null
+           id: string
+-          product_name: string
+-          product_slug: string
++          items: Json
+           reference: string
+           shipping_address: string | null
+           shipping_city: string | null
+-          size: string
+-          status: Database["public"]["Enums"]["order_status"]
++          shipping_cop: number
++          shipping_department: string | null
++          status: string | null
++          subtotal_cop: number
+           updated_at: string
+-          user_id: string | null
+           wompi_transaction_id: string | null
+         }
+         Insert: {
+-          access_token?: string
+           amount_in_cents: number
+-          created_at?: string
+-          currency?: string
++          created_at?: string | null
++          currency?: string | null
+           customer_email?: string | null
+           customer_name?: string | null
+           customer_phone?: string | null
++          email?: string | null
+           id?: string
+-          product_name: string
+-          product_slug: string
++          items?: Json
+           reference: string
+           shipping_address?: string | null
+           shipping_city?: string | null
+-          size: string
+-          status?: Database["public"]["Enums"]["order_status"]
++          shipping_cop?: number
++          shipping_department?: string | null
++          status?: string | null
++          subtotal_cop?: number
+           updated_at?: string
+-          user_id?: string | null
+           wompi_transaction_id?: string | null
+         }
+         Update: {
+-          access_token?: string
+           amount_in_cents?: number
+-          created_at?: string
+-          currency?: string
++          created_at?: string | null
++          currency?: string | null
+           customer_email?: string | null
+           customer_name?: string | null
+           customer_phone?: string | null
++          email?: string | null
+           id?: string
+-          product_name?: string
+-          product_slug?: string
++          items?: Json
+           reference?: string
+           shipping_address?: string | null
+           shipping_city?: string | null
+-          size?: string
+-          status?: Database["public"]["Enums"]["order_status"]
++          shipping_cop?: number
++          shipping_department?: string | null
++          status?: string | null
++          subtotal_cop?: number
+           updated_at?: string
+-          user_id?: string | null
+           wompi_transaction_id?: string | null
+         }
+         Relationships: []
+       }
++      product_sizes: {
++        Row: {
++          extra_price_cop: number
++          id: string
++          product_id: string
++          size: string
++          stock: number
++        }
++        Insert: {
++          extra_price_cop?: number
++          id?: string
++          product_id: string
++          size: string
++          stock?: number
++        }
++        Update: {
++          extra_price_cop?: number
++          id?: string
++          product_id?: string
++          size?: string
++          stock?: number
++        }
++        Relationships: [
++          {
++            foreignKeyName: "product_sizes_product_id_fkey"
++            columns: ["product_id"]
++            isOneToOne: false
++            referencedRelation: "products"
++            referencedColumns: ["id"]
++          },
++        ]
++      }
++      products: {
++        Row: {
++          active: boolean
++          created_at: string
++          description: string | null
++          id: string
++          image_back_url: string | null
++          image_front_url: string | null
++          name: string
++          price_cop: number
++          slug: string
++        }
++        Insert: {
++          active?: boolean
++          created_at?: string
++          description?: string | null
++          id?: string
++          image_back_url?: string | null
++          image_front_url?: string | null
++          name: string
++          price_cop: number
++          slug: string
++        }
++        Update: {
++          active?: boolean
++          created_at?: string
++          description?: string | null
++          id?: string
++          image_back_url?: string | null
++          image_front_url?: string | null
++          name?: string
++          price_cop?: number
++          slug?: string
++        }
++        Relationships: []
++      }
++      shipping_zones: {
++        Row: {
++          department: string
++          id: string
++          shipping_cop: number
++        }
++        Insert: {
++          department: string
++          id?: string
++          shipping_cop: number
++        }
++        Update: {
++          department?: string
++          id?: string
++          shipping_cop?: number
++        }
++        Relationships: []
++      }
+     }
+     Views: {
+       [_ in never]: never
+     }
+     Functions: {
+-      [_ in never]: never
++      decrement_stock_if_available: {
++        Args: { p_qty: number; p_size_id: string }
++        Returns: boolean
++      }
++      increment_stock: {
++        Args: { p_qty: number; p_size_id: string }
++        Returns: undefined
++      }
+     }
+     Enums: {
+-      order_status: "pending" | "approved" | "declined" | "error"
++      [_ in never]: never
+     }
+     CompositeTypes: {
+       [_ in never]: never
+@@ -212,8 +303,6 @@ export type CompositeTypes<
+ 
+ export const Constants = {
+   public: {
+-    Enums: {
+-      order_status: ["pending", "approved", "declined", "error"],
+-    },
++    Enums: {},
+   },
+ } as const
+diff --git a/src/routes/api.checkout.ts b/src/routes/api.checkout.ts
+index 002c32d..62d123e 100644
+--- a/src/routes/api.checkout.ts
++++ b/src/routes/api.checkout.ts
+@@ -1,8 +1,10 @@
+ import { createFileRoute } from "@tanstack/react-router";
+ import type {} from "@tanstack/react-start";
+-import { PRICE, PRODUCTS, SIZES } from "@/lib/drop-data";
+ 
+ const CURRENCY = "COP";
++const FREE_SHIPPING_THRESHOLD_COP = 250000;
++const DEFAULT_SHIPPING_COP = 17000; // fallback si el departamento no está en shipping_zones
++const VALID_SIZES = ["S", "M", "L", "XL", "XXL"];
+ 
+ function jsonResponse(body: unknown, status = 200): Response {
+   return new Response(JSON.stringify(body), {
+@@ -23,6 +25,8 @@ async function sha256Hex(input: string): Promise<string> {
+     .join("");
+ }
+ 
++type CartLine = { slug: string; size: string; qty: number };
++
+ export const Route = createFileRoute("/api/checkout")({
+   server: {
+     handlers: {
+@@ -34,28 +38,33 @@ export const Route = createFileRoute("/api/checkout")({
+           return jsonResponse({ error: "JSON inválido." }, 400);
+         }
+ 
+-        const productSlug = sanitize(body["productSlug"], 60);
+-        const size = sanitize(body["size"], 10);
++        const rawItems = Array.isArray(body["items"]) ? (body["items"] as unknown[]) : [];
++        const cart: CartLine[] = rawItems
++          .map((it) => {
++            const o = it as Record<string, unknown>;
++            const qty = Math.floor(Number(o["qty"] ?? 1));
++            return {
++              slug: sanitize(o["slug"], 60),
++              size: sanitize(o["size"], 10).toUpperCase(),
++              qty: Number.isFinite(qty) && qty > 0 ? Math.min(qty, 10) : 1,
++            };
++          })
++          .filter((it) => it.slug && VALID_SIZES.includes(it.size));
++
+         const name = sanitize(body["name"], 80);
+         const phone = sanitize(body["phone"], 25);
++        const email = sanitize(body["email"], 120);
++        const department = sanitize(body["department"], 60);
+         const city = sanitize(body["city"], 60);
+         const address = sanitize(body["address"], 160);
+ 
+-        // El precio y el nombre del producto SIEMPRE salen del catálogo del
+-        // servidor. El cliente nunca puede influir en el monto que se cobra.
+-        const product = PRODUCTS.find((p) => p.slug === productSlug);
+-        if (!product) {
+-          return jsonResponse({ error: "Producto inválido." }, 400);
++        if (cart.length === 0) {
++          return jsonResponse({ error: "El carrito está vacío o es inválido." }, 400);
+         }
+-        if (!SIZES.includes(size)) {
+-          return jsonResponse({ error: "Talla inválida." }, 400);
+-        }
+-        if (!name || !phone || !city || !address) {
++        if (!name || !phone || !department || !city || !address) {
+           return jsonResponse({ error: "Faltan datos de envío." }, 400);
+         }
+ 
+-        const amountInCents = PRICE * 100;
+-
+         const integritySecret = process.env["WOMPI_INTEGRITY_SECRET"]?.trim();
+         const publicKey = (process.env["VITE_WOMPI_PUBLIC_KEY"] ?? process.env["WOMPI_PUBLIC_KEY"])?.trim();
+         if (!integritySecret || !publicKey) {
+@@ -65,18 +74,125 @@ export const Route = createFileRoute("/api/checkout")({
+ 
+         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+ 
++        // 1) Traer precio y stock REALES desde Supabase — nunca del cliente.
++        const slugs = [...new Set(cart.map((c) => c.slug))];
++        const { data: products, error: prodError } = await supabaseAdmin
++          .from("products")
++          .select("id, slug, name, price_cop, active")
++          .in("slug", slugs)
++          .eq("active", true);
++
++        if (prodError || !products || products.length === 0) {
++          return jsonResponse({ error: "Uno o más productos no existen." }, 400);
++        }
++
++        const { data: sizeRows, error: sizeError } = await supabaseAdmin
++          .from("product_sizes")
++          .select("id, product_id, size, stock, extra_price_cop")
++          .in(
++            "product_id",
++            products.map((p) => p.id),
++          );
++
++        if (sizeError || !sizeRows) {
++          return jsonResponse({ error: "No pudimos validar el inventario." }, 500);
++        }
++
++        type Line = {
++          slug: string;
++          name: string;
++          size: string;
++          qty: number;
++          unitPriceCop: number;
++          sizeRowId: string;
++        };
++        const lines: Line[] = [];
++
++        for (const item of cart) {
++          const product = products.find((p) => p.slug === item.slug);
++          if (!product) {
++            return jsonResponse({ error: `Producto inválido: ${item.slug}` }, 400);
++          }
++          const sizeRow = sizeRows.find((s) => s.product_id === product.id && s.size === item.size);
++          if (!sizeRow) {
++            return jsonResponse({ error: `Talla inválida para ${item.slug}.` }, 400);
++          }
++          if (sizeRow.stock < item.qty) {
++            return jsonResponse(
++              { error: `Sin stock suficiente de ${product.name} talla ${item.size}.` },
++              409,
++            );
++          }
++          lines.push({
++            slug: product.slug,
++            name: product.name,
++            size: item.size,
++            qty: item.qty,
++            unitPriceCop: product.price_cop + sizeRow.extra_price_cop,
++            sizeRowId: sizeRow.id,
++          });
++        }
++
++        const subtotalCop = lines.reduce((sum, l) => sum + l.unitPriceCop * l.qty, 0);
++
++        // 2) Envío: solo nacional, por departamento, gratis sobre el umbral.
++        let shippingCop = 0;
++        if (subtotalCop < FREE_SHIPPING_THRESHOLD_COP) {
++          const { data: zone } = await supabaseAdmin
++            .from("shipping_zones")
++            .select("shipping_cop")
++            .eq("department", department)
++            .maybeSingle();
++          shippingCop = zone?.shipping_cop ?? DEFAULT_SHIPPING_COP;
++        }
++
++        const totalCop = subtotalCop + shippingCop;
++        const amountInCents = totalCop * 100;
++
++        // 3) Reservar stock de forma atómica (evita sobreventa por condición
++        //    de carrera): solo descuenta si todavía hay suficiente stock.
++        for (const line of lines) {
++          const { data: updated, error: stockError } = await supabaseAdmin.rpc(
++            "decrement_stock_if_available",
++            { p_size_id: line.sizeRowId, p_qty: line.qty },
++          );
++          if (stockError || updated !== true) {
++            // Revertir lo ya descontado en este mismo intento antes de fallar.
++            const idx = lines.indexOf(line);
++            for (const done of lines.slice(0, idx)) {
++              await supabaseAdmin.rpc("increment_stock", {
++                p_size_id: done.sizeRowId,
++                p_qty: done.qty,
++              });
++            }
++            return jsonResponse({ error: `Se agotó el stock de ${line.name} talla ${line.size}.` }, 409);
++          }
++        }
++
++        const reference = crypto.randomUUID();
++        const itemsSnapshot = lines.map((l) => ({
++          slug: l.slug,
++          name: l.name,
++          size: l.size,
++          qty: l.qty,
++          unit_price_cop: l.unitPriceCop,
++          line_total_cop: l.unitPriceCop * l.qty,
++        }));
++
+         const { data: order, error: dbError } = await supabaseAdmin
+           .from("orders")
+           .insert({
+-            product_slug: product.slug,
+-            product_name: product.name,
+-            size,
++            reference,
++            items: itemsSnapshot,
++            subtotal_cop: subtotalCop,
++            shipping_cop: shippingCop,
+             amount_in_cents: amountInCents,
+             currency: CURRENCY,
+             status: "pending",
+-            reference: crypto.randomUUID(),
+             customer_name: name,
+             customer_phone: phone,
++            customer_email: email || null,
++            shipping_department: department,
+             shipping_city: city,
+             shipping_address: address,
+           })
+@@ -85,10 +201,13 @@ export const Route = createFileRoute("/api/checkout")({
+ 
+         if (dbError || !order) {
+           console.error("[checkout] Error creando el pedido:", dbError);
++          // Devolver el stock reservado si el pedido no se pudo crear.
++          for (const line of lines) {
++            await supabaseAdmin.rpc("increment_stock", { p_size_id: line.sizeRowId, p_qty: line.qty });
++          }
+           return jsonResponse({ error: "No pudimos registrar tu pedido." }, 500);
+         }
+ 
+-        const reference = order.reference as string;
+         const signature = await sha256Hex(
+           `${reference}${amountInCents}${CURRENCY}${integritySecret}`,
+         );
+@@ -99,6 +218,9 @@ export const Route = createFileRoute("/api/checkout")({
+           currency: CURRENCY,
+           publicKey,
+           signature,
++          subtotalCop,
++          shippingCop,
++          totalCop,
+         });
+       },
+     },
+diff --git a/src/routes/api.wompi-webhook.ts b/src/routes/api.wompi-webhook.ts
+index 1f4afcb..8b60185 100644
+--- a/src/routes/api.wompi-webhook.ts
++++ b/src/routes/api.wompi-webhook.ts
+@@ -30,8 +30,10 @@ type WompiEvent = {
+   signature: { properties: string[]; checksum: string };
+ };
+ 
+-const STATUS_MAP: Record<string, "approved" | "declined" | "error"> = {
+-  APPROVED: "approved",
++// "VENTA REALIZADA" es el estado que ve Inti en la tabla de Supabase cuando
++// el pago quedó confirmado y verificado por la firma de Wompi.
++const STATUS_MAP: Record<string, "VENTA REALIZADA" | "declined" | "error"> = {
++  APPROVED: "VENTA REALIZADA",
+   DECLINED: "declined",
+   ERROR: "error",
+   VOIDED: "declined",
+@@ -41,7 +43,7 @@ export const Route = createFileRoute("/api/wompi-webhook")({
+   server: {
+     handlers: {
+       POST: async ({ request }) => {
+-        const eventsSecret = process.env["WOMPI_EVENTS_SECRET"];
++        const eventsSecret = process.env["WOMPI_EVENTS_SECRET"]?.trim();
+         if (!eventsSecret) {
+           console.error("[wompi-webhook] Falta WOMPI_EVENTS_SECRET.");
+           return jsonResponse({ error: "No configurado." }, 500);
+@@ -59,9 +61,8 @@ export const Route = createFileRoute("/api/wompi-webhook")({
+           return jsonResponse({ error: "Payload incompleto." }, 400);
+         }
+ 
+-        // 1) Verificar el checksum firmado por Wompi con nuestro secreto de eventos.
+-        //    Esto garantiza que el evento vino realmente de Wompi y no fue
+-        //    falsificado ni alterado en tránsito.
++        // 1) Verificar el checksum firmado por Wompi con nuestro secreto de
++        //    eventos: así confirmamos que el evento vino realmente de Wompi.
+         const concatenated =
+           signature.properties.map((p) => String(getByPath(payload, p) ?? "")).join("") +
+           String(timestamp) +
+@@ -90,7 +91,7 @@ export const Route = createFileRoute("/api/wompi-webhook")({
+         //    con el que nosotros calculamos y guardamos al crear el pedido.
+         const { data: order, error: fetchError } = await supabaseAdmin
+           .from("orders")
+-          .select("id, amount_in_cents, status")
++          .select("id, amount_in_cents, status, items")
+           .eq("reference", reference)
+           .single();
+ 
+@@ -113,7 +114,7 @@ export const Route = createFileRoute("/api/wompi-webhook")({
+ 
+         const { error: updateError } = await supabaseAdmin
+           .from("orders")
+-          .update({ status: mappedStatus, wompi_transaction_id: wompiTransactionId })
++          .update({ status: mappedStatus, wompi_transaction_id: wompiTransactionId, updated_at: new Date().toISOString() })
+           .eq("id", order.id)
+           .eq("status", "pending");
+ 
+@@ -122,6 +123,26 @@ export const Route = createFileRoute("/api/wompi-webhook")({
+           return jsonResponse({ error: "Error interno." }, 500);
+         }
+ 
++        // 3) Si el pago NO se aprobó, devolver el stock que se había
++        //    reservado al crear el pedido.
++        if (mappedStatus !== "VENTA REALIZADA") {
++          const items = Array.isArray(order.items) ? (order.items as Array<Record<string, unknown>>) : [];
++          for (const item of items) {
++            const { data: sizeRow } = await supabaseAdmin
++              .from("product_sizes")
++              .select("id, product_id, products!inner(slug)")
++              .eq("size", String(item["size"]))
++              .eq("products.slug", String(item["slug"]))
++              .maybeSingle();
++            if (sizeRow) {
++              await supabaseAdmin.rpc("increment_stock", {
++                p_size_id: sizeRow.id,
++                p_qty: Number(item["qty"] ?? 0),
++              });
++            }
++          }
++        }
++
+         return jsonResponse({ ok: true });
+       },
+     },
+diff --git a/supabase/migrations/20260830010000_national_catalog_and_orders_redesign.sql b/supabase/migrations/20260830010000_national_catalog_and_orders_redesign.sql
+new file mode 100644
+index 0000000..2cd73a0
+--- /dev/null
++++ b/supabase/migrations/20260830010000_national_catalog_and_orders_redesign.sql
+@@ -0,0 +1,112 @@
++-- ============================================================
++-- CATÁLOGO (fuente de verdad para precio y stock, solo nacional)
++-- ============================================================
++drop table if exists public.products cascade;
++
++create table public.products (
++  id uuid primary key default gen_random_uuid(),
++  slug text unique not null,
++  name text not null,
++  description text,
++  price_cop integer not null check (price_cop > 0),
++  image_front_url text,
++  image_back_url text,
++  active boolean not null default true,
++  created_at timestamptz not null default now()
++);
++
++create table public.product_sizes (
++  id uuid primary key default gen_random_uuid(),
++  product_id uuid not null references public.products(id) on delete cascade,
++  size text not null check (size in ('S','M','L','XL','XXL')),
++  stock integer not null default 0 check (stock >= 0),
++  extra_price_cop integer not null default 0 check (extra_price_cop >= 0),
++  unique (product_id, size)
++);
++
++create table public.shipping_zones (
++  id uuid primary key default gen_random_uuid(),
++  department text unique not null,
++  shipping_cop integer not null check (shipping_cop >= 0)
++);
++
++alter table public.products enable row level security;
++alter table public.product_sizes enable row level security;
++alter table public.shipping_zones enable row level security;
++
++-- Lectura pública del catálogo (no sensible), sin escritura para nadie
++-- fuera de service_role.
++create policy "products_public_read" on public.products
++  for select to anon, authenticated using (active = true);
++create policy "product_sizes_public_read" on public.product_sizes
++  for select to anon, authenticated using (true);
++
++-- shipping_zones NO se expone públicamente (evita que el cliente calcule
++-- su propio envío); el servidor la consulta con service_role.
++
++-- Semilla: catálogo real actual (5 camisas), tallas S-XXL, stock inicial
++-- de ejemplo (AJUSTA el stock real desde el editor de tablas de Supabase).
++insert into public.products (slug, name, description, price_cop, image_front_url) values
++  ('machine-girl', 'INTI(t) MACHINE GIRL', 'Camisa oversize negra con print full-front inspirado en el artwork japonés de breakcore.', 79999, '/images/machine_girl.webp'),
++  ('aphex', 'INTI(t) AFX-47', 'Negro lavado con print AFX-47 en frente, logo circular morado y lettering INTI-net.', 79999, '/images/aphex.webp'),
++  ('creeper', 'INTI(t) CREEPER', 'Verde bosque con print pixelado y tribal cyber-sigil en negro.', 79999, '/images/creeper.webp'),
++  ('2003', 'INTI(t) 2003', 'Blanco oversize con número 2003 en efecto de baja resolución.', 79999, '/images/2003.webp'),
++  ('2005', 'INTI(t) 2005', 'Blanco oversize con número 2005 pixelado en alto contraste.', 79999, '/images/2005.webp');
++
++insert into public.product_sizes (product_id, size, stock, extra_price_cop)
++select p.id, s.size, 10, case when s.size = 'XXL' then 15000 else 0 end
++from public.products p
++cross join (values ('S'),('M'),('L'),('XL'),('XXL')) as s(size);
++
++insert into public.shipping_zones (department, shipping_cop) values
++  ('Bogotá D.C.', 10000),
++  ('Cundinamarca', 11000),
++  ('Antioquia', 12000),
++  ('Valle del Cauca', 12000),
++  ('Atlántico', 13000),
++  ('Santander', 13000),
++  ('Otro', 17000);
++
++-- ============================================================
++-- PEDIDOS (multi-producto, nacional, sin lógica internacional)
++-- ============================================================
++alter table public.orders
++  drop column if exists product_id,
++  drop column if exists product_slug,
++  drop column if exists product_name,
++  drop column if exists size,
++  drop column if exists quantity,
++  drop column if exists price,
++  drop column if exists payment_method,
++  drop column if exists full_name,
++  drop column if exists phone,
++  drop column if exists city,
++  drop column if exists address,
++  drop column if exists customer_city,
++  drop column if exists customer_address,
++  drop column if exists shipping_name,
++  drop column if exists shipping_phone,
++  drop column if exists region,
++  drop column if exists subtotal_cents,
++  drop column if exists shipping_cents;
++
++update public.orders set items = '[]'::jsonb where items is null;
++alter table public.orders
++  alter column items set default '[]'::jsonb,
++  alter column items set not null;
++
++alter table public.orders
++  add column if not exists subtotal_cop integer not null default 0,
++  add column if not exists shipping_cop integer not null default 0,
++  add column if not exists customer_email text,
++  add column if not exists shipping_department text,
++  add column if not exists updated_at timestamptz not null default now();
++
++alter table public.orders alter column status set default 'pending';
++update public.orders set status = 'pending' where status = 'PENDING';
++alter table public.orders drop constraint if exists orders_status_check;
++alter table public.orders add constraint orders_status_check
++  check (status in ('pending','VENTA REALIZADA','declined','error'));
++
++-- Ya estaba correctamente bloqueado, se reafirma explícitamente:
++revoke all on public.orders from anon, authenticated;
+diff --git a/supabase/migrations/20260830010100_stock_helper_functions.sql b/supabase/migrations/20260830010100_stock_helper_functions.sql
+new file mode 100644
+index 0000000..f1a0e02
+--- /dev/null
++++ b/supabase/migrations/20260830010100_stock_helper_functions.sql
+@@ -0,0 +1,32 @@
++create or replace function public.decrement_stock_if_available(p_size_id uuid, p_qty integer)
++returns boolean
++language plpgsql
++security definer
++set search_path = public
++as $$
++declare
++  v_updated integer;
++begin
++  update public.product_sizes
++    set stock = stock - p_qty
++    where id = p_size_id and stock >= p_qty;
++  get diagnostics v_updated = row_count;
++  return v_updated > 0;
++end;
++$$;
++
++create or replace function public.increment_stock(p_size_id uuid, p_qty integer)
++returns void
++language plpgsql
++security definer
++set search_path = public
++as $$
++begin
++  update public.product_sizes set stock = stock + p_qty where id = p_size_id;
++end;
++$$;
++
++-- Solo callable por service_role (las funciones no son visibles para
++-- anon/authenticated salvo que se otorgue explícitamente, y aquí no se hace).
++revoke all on function public.decrement_stock_if_available(uuid, integer) from public;
++revoke all on function public.increment_stock(uuid, integer) from public;

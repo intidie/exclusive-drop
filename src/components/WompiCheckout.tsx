@@ -31,16 +31,33 @@ function loadWidget(): Promise<void> {
   });
 }
 
+// Departamentos con tarifa de envío conocida en Supabase (shipping_zones).
+// Si agregas más allá en la base de datos, agrégalos aquí también para que
+// aparezcan en el selector (el precio real siempre lo calcula el servidor).
+const DEPARTMENTS = [
+  "Bogotá D.C.",
+  "Cundinamarca",
+  "Antioquia",
+  "Valle del Cauca",
+  "Atlántico",
+  "Santander",
+  "Otro",
+];
+
 export default function WompiCheckout({ open, onClose, productSlug, productName, size }: Props) {
   const [phase, setPhase] = useState<Phase>("form");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [totals, setTotals] = useState<{ subtotalCop: number; shippingCop: number; totalCop: number } | null>(
+    null,
+  );
 
   useEffect(() => {
     if (!open) {
       setPhase("form");
       setError(null);
       setBusy(false);
+      setTotals(null);
     }
   }, [open]);
 
@@ -51,17 +68,18 @@ export default function WompiCheckout({ open, onClose, productSlug, productName,
     const fd = new FormData(e.currentTarget);
 
     try {
-      // El precio, la referencia y la firma de integridad los calcula el
-      // servidor (ver src/routes/api.checkout.ts). El cliente nunca decide
-      // cuánto se cobra.
+      // El precio, el stock, la referencia y la firma de integridad los
+      // calcula el servidor (ver src/routes/api.checkout.ts). El cliente
+      // nunca decide cuánto se cobra ni descuenta el inventario.
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          productSlug,
-          size,
+          items: [{ slug: productSlug, size, qty: 1 }],
           name: String(fd.get("name") ?? ""),
           phone: String(fd.get("phone") ?? ""),
+          email: String(fd.get("email") ?? ""),
+          department: String(fd.get("department") ?? ""),
           city: String(fd.get("city") ?? ""),
           address: String(fd.get("address") ?? ""),
         }),
@@ -73,11 +91,22 @@ export default function WompiCheckout({ open, onClose, productSlug, productName,
         currency?: string;
         publicKey?: string;
         signature?: string;
+        subtotalCop?: number;
+        shippingCop?: number;
+        totalCop?: number;
         error?: string;
       } | null;
 
       if (!res.ok || !checkout?.reference || !checkout.signature) {
         throw new Error(checkout?.error ?? "No pudimos registrar tu pedido.");
+      }
+
+      if (checkout.subtotalCop != null && checkout.shippingCop != null && checkout.totalCop != null) {
+        setTotals({
+          subtotalCop: checkout.subtotalCop,
+          shippingCop: checkout.shippingCop,
+          totalCop: checkout.totalCop,
+        });
       }
 
       await loadWidget();
@@ -148,6 +177,17 @@ export default function WompiCheckout({ open, onClose, productSlug, productName,
                   </p>
                   <input name="name" required maxLength={80} placeholder="Nombre completo" className={field} />
                   <input name="phone" required maxLength={25} placeholder="Teléfono / WhatsApp" className={field} />
+                  <input name="email" type="email" maxLength={120} placeholder="Correo (opcional)" className={field} />
+                  <select name="department" required defaultValue="" className={field}>
+                    <option value="" disabled>
+                      Departamento
+                    </option>
+                    {DEPARTMENTS.map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
                   <input name="city" required maxLength={60} placeholder="Ciudad" className={field} />
                   <input name="address" required maxLength={160} placeholder="Dirección de envío" className={field} />
                   {error && <p className="text-xs text-red-400">{error}</p>}
@@ -160,7 +200,8 @@ export default function WompiCheckout({ open, onClose, productSlug, productName,
                   </button>
                   <p className="text-[10px] text-white/45 leading-relaxed">
                     Envío nacional: tu camisa se hace a mano y se despacha 1 semana después de la
-                    compra. El tiempo de entrega varía según tu región.
+                    compra. El costo de envío se calcula según tu departamento y es gratis en
+                    compras superiores a $250.000. El tiempo de entrega varía según tu región.
                   </p>
                 </form>
               )}
@@ -168,6 +209,22 @@ export default function WompiCheckout({ open, onClose, productSlug, productName,
               {phase === "sent" && (
                 <div className="space-y-4 py-4">
                   <h3 className="text-3xl font-display tracking-wide">Pedido registrado</h3>
+                  {totals && (
+                    <div className="text-sm text-white/70 space-y-1 border-t border-white/10 pt-3">
+                      <div className="flex justify-between">
+                        <span>Subtotal</span>
+                        <span>${totals.subtotalCop.toLocaleString("es-CO")}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Envío</span>
+                        <span>{totals.shippingCop === 0 ? "Gratis" : `$${totals.shippingCop.toLocaleString("es-CO")}`}</span>
+                      </div>
+                      <div className="flex justify-between font-semibold text-white">
+                        <span>Total</span>
+                        <span>${totals.totalCop.toLocaleString("es-CO")}</span>
+                      </div>
+                    </div>
+                  )}
                   <p className="text-sm text-white/70">
                     Tu pedido de {productName} (talla {size}) quedó registrado. Si el pago fue
                     aprobado, tu camisa se elabora a mano y se despacha 1 semana después de la

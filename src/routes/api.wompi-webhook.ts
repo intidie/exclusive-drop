@@ -30,8 +30,10 @@ type WompiEvent = {
   signature: { properties: string[]; checksum: string };
 };
 
-const STATUS_MAP: Record<string, "approved" | "declined" | "error"> = {
-  APPROVED: "approved",
+// "VENTA REALIZADA" es el estado que ve Inti en la tabla de Supabase cuando
+// el pago quedó confirmado y verificado por la firma de Wompi.
+const STATUS_MAP: Record<string, "VENTA REALIZADA" | "declined" | "error"> = {
+  APPROVED: "VENTA REALIZADA",
   DECLINED: "declined",
   ERROR: "error",
   VOIDED: "declined",
@@ -41,7 +43,7 @@ export const Route = createFileRoute("/api/wompi-webhook")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const eventsSecret = process.env["WOMPI_EVENTS_SECRET"];
+        const eventsSecret = process.env["WOMPI_EVENTS_SECRET"]?.trim();
         if (!eventsSecret) {
           console.error("[wompi-webhook] Falta WOMPI_EVENTS_SECRET.");
           return jsonResponse({ error: "No configurado." }, 500);
@@ -59,9 +61,8 @@ export const Route = createFileRoute("/api/wompi-webhook")({
           return jsonResponse({ error: "Payload incompleto." }, 400);
         }
 
-        // 1) Verificar el checksum firmado por Wompi con nuestro secreto de eventos.
-        //    Esto garantiza que el evento vino realmente de Wompi y no fue
-        //    falsificado ni alterado en tránsito.
+        // 1) Verificar el checksum firmado por Wompi con nuestro secreto de
+        //    eventos: así confirmamos que el evento vino realmente de Wompi.
         const concatenated =
           signature.properties.map((p) => String(getByPath(payload, p) ?? "")).join("") +
           String(timestamp) +
@@ -90,7 +91,7 @@ export const Route = createFileRoute("/api/wompi-webhook")({
         //    con el que nosotros calculamos y guardamos al crear el pedido.
         const { data: order, error: fetchError } = await supabaseAdmin
           .from("orders")
-          .select("id, amount_in_cents, status")
+          .select("id, amount_in_cents, status, items")
           .eq("reference", reference)
           .single();
 
@@ -113,13 +114,33 @@ export const Route = createFileRoute("/api/wompi-webhook")({
 
         const { error: updateError } = await supabaseAdmin
           .from("orders")
-          .update({ status: mappedStatus, wompi_transaction_id: wompiTransactionId })
+          .update({ status: mappedStatus, wompi_transaction_id: wompiTransactionId, updated_at: new Date().toISOString() })
           .eq("id", order.id)
           .eq("status", "pending");
 
         if (updateError) {
           console.error("[wompi-webhook] Error actualizando pedido:", updateError);
           return jsonResponse({ error: "Error interno." }, 500);
+        }
+
+        // 3) Si el pago NO se aprobó, devolver el stock que se había
+        //    reservado al crear el pedido.
+        if (mappedStatus !== "VENTA REALIZADA") {
+          const items = Array.isArray(order.items) ? (order.items as Array<Record<string, unknown>>) : [];
+          for (const item of items) {
+            const { data: sizeRow } = await supabaseAdmin
+              .from("product_sizes")
+              .select("id, product_id, products!inner(slug)")
+              .eq("size", String(item["size"]))
+              .eq("products.slug", String(item["slug"]))
+              .maybeSingle();
+            if (sizeRow) {
+              await supabaseAdmin.rpc("increment_stock", {
+                p_size_id: sizeRow.id,
+                p_qty: Number(item["qty"] ?? 0),
+              });
+            }
+          }
         }
 
         return jsonResponse({ ok: true });
