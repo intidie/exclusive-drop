@@ -3,10 +3,19 @@ export const SIZES = ["S", "M", "L", "XL", "XXL"];
 export const PRINT_SPEC =
   "Estampado en DTF máxima calidad. No le salen motas, máxima calidad.";
 
-export const PRICE = 74999;
+// El precio real que se cobra SIEMPRE lo valida el servidor contra la tabla
+// `products`/`product_sizes` en Supabase (ver src/routes/api.checkout.ts).
+// Estas constantes son solo para mostrar un estimado antes de pagar.
+export const PRICE = 89999;
+export const XXL_SURCHARGE_COP = 15000;
 
-export const ORIGINAL_PRICE = 87999;
+export const ORIGINAL_PRICE = 99999;
 export const USD_TRM = 4000;
+
+// Envío nacional (Colombia): gratis en compras superiores a este monto.
+// Por debajo del umbral, el envío corre por cuenta del cliente y se
+// coordina aparte (no se cobra a través de Wompi).
+export const FREE_SHIPPING_THRESHOLD_COP = 250000;
 
 export type Product = {
   slug: string;
@@ -76,15 +85,8 @@ export const SIZE_GUIDE = [
   { size: "XXL", chest: 64, length: 76, shoulder: 60, sleeve: 25 },
 ];
 
+// Solo Instagram como contacto — no se usa WhatsApp en ningún punto del sitio.
 export const CONTACT = {
   instagram: "https://www.instagram.com/intitnet/",
   instagramHandle: "@intitnet",
-  whatsappNumber: "573006865256",
-  whatsappDisplay: "+57 300 686 5256",
-  whatsappMessage: "Hola! Quiero apartar una camisa del drop LIVE LEAKS by INTI(t).",
 };
-
-export const waLink = (extra = "") =>
-  `https://wa.me/${CONTACT.whatsappNumber}?text=${encodeURIComponent(
-    CONTACT.whatsappMessage + (extra ? " " + extra : "")
-  )}`;

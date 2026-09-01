@@ -1,9 +1,9 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useState } from "react";
-import { getProduct, PRODUCTS, PRICE, ORIGINAL_PRICE, USD_TRM, SIZES, CONTACT, PRINT_SPEC } from "@/lib/drop-data";
+import { getProduct, PRODUCTS, PRICE, ORIGINAL_PRICE, USD_TRM, SIZES, CONTACT, PRINT_SPEC, XXL_SURCHARGE_COP } from "@/lib/drop-data";
 import CountdownTimer from "@/components/CountdownTimer";
 import SizeGuideModal from "@/components/SizeGuideModal";
-import WompiCheckout from "@/components/WompiCheckout";
+import { useCart } from "@/lib/cart-context";
 
 
 const formatCOP = (n: number) =>
@@ -66,8 +66,14 @@ function ProductPage() {
   const { product } = Route.useLoaderData();
   const [size, setSize] = useState("XL");
   const [guideOpen, setGuideOpen] = useState(false);
-  const [buyOpen, setBuyOpen] = useState(false);
+  const [added, setAdded] = useState(false);
+  const { addItem, openCart } = useCart();
 
+  function handleAddToCart() {
+    addItem({ slug: product.slug, name: product.name, size });
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1800);
+  }
 
   return (
     <main className="bg-black text-white min-h-screen font-sans grain">
@@ -87,6 +93,10 @@ function ProductPage() {
 
       <article className="max-w-6xl mx-auto px-6 py-10 md:py-16 grid md:grid-cols-2 gap-8 md:gap-16 items-start relative z-10">
         <div className="grid gap-4">
+          {/* Cuando subas la foto trasera, agrégala como segundo elemento en
+              el arreglo `images` de este producto en src/lib/drop-data.ts —
+              esta galería ya muestra automáticamente todas las fotos que
+              tenga el producto, no necesita ningún cambio de código. */}
           {product.images.map((src: string, i: number) => (
             <div key={src} className="aspect-[4/5] overflow-hidden bg-neutral-950 hairline group cursor-zoom-in">
               <img
@@ -117,6 +127,9 @@ function ProductPage() {
             <p className="text-sm text-white/60 mt-1 font-mono">
               ≈ {formatUSD(Math.round(PRICE / USD_TRM))} USD{" "}
               <span className="text-xs opacity-60">(TRM {formatCOP(USD_TRM)}/USD)</span>
+            </p>
+            <p className="text-xs text-white/50 mt-1">
+              Talla XXL: +{formatCOP(XXL_SURCHARGE_COP)} adicionales.
             </p>
           </div>
 
@@ -155,15 +168,21 @@ function ProductPage() {
 
           <button
             type="button"
-            onClick={() => setBuyOpen(true)}
+            onClick={handleAddToCart}
             className="inline-flex items-center justify-center h-14 px-8 micro font-semibold bg-white text-black border border-white hover:bg-transparent hover:text-white transition-colors"
           >
-            Confirmar compra
+            {added ? "Agregado ✓" : "Agregar al carrito"}
           </button>
+          {added && (
+            <button type="button" onClick={openCart} className="micro underline underline-offset-4 text-left hover:opacity-60">
+              Ver carrito →
+            </button>
+          )}
 
           <p className="text-xs text-white/55 leading-relaxed">
             Pago seguro con Wompi: tarjeta, PSE, Nequi, botón Bancolombia y efectivo.
-            Envíos solo a nivel nacional (Colombia) — próximamente internacionales.
+            Envío nacional gratis en compras superiores a $250.000 (solo Colombia); por debajo de
+            ese monto el envío corre por cuenta del comprador y se coordina aparte.
           </p>
 
 
@@ -194,14 +213,6 @@ function ProductPage() {
       </section>
 
       <SizeGuideModal open={guideOpen} onClose={() => setGuideOpen(false)} />
-      <WompiCheckout
-        open={buyOpen}
-        onClose={() => setBuyOpen(false)}
-        productSlug={product.slug}
-        productName={product.name}
-        size={size}
-      />
-
     </main>
   );
 }

@@ -2,8 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 
 const CURRENCY = "COP";
-const FREE_SHIPPING_THRESHOLD_COP = 250000;
-const DEFAULT_SHIPPING_COP = 17000; // fallback si el departamento no está en shipping_zones
 const VALID_SIZES = ["S", "M", "L", "XL", "XXL"];
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -54,14 +52,13 @@ export const Route = createFileRoute("/api/checkout")({
         const name = sanitize(body["name"], 80);
         const phone = sanitize(body["phone"], 25);
         const email = sanitize(body["email"], 120);
-        const department = sanitize(body["department"], 60);
         const city = sanitize(body["city"], 60);
         const address = sanitize(body["address"], 160);
 
         if (cart.length === 0) {
           return jsonResponse({ error: "El carrito está vacío o es inválido." }, 400);
         }
-        if (!name || !phone || !department || !city || !address) {
+        if (!name || !phone || !city || !address) {
           return jsonResponse({ error: "Faltan datos de envío." }, 400);
         }
 
@@ -74,7 +71,7 @@ export const Route = createFileRoute("/api/checkout")({
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-        // 1) Traer precio y stock REALES desde Supabase — nunca del cliente.
+        // Traer precio y stock REALES desde Supabase — nunca del cliente.
         const slugs = [...new Set(cart.map((c) => c.slug))];
         const { data: products, error: prodError } = await supabaseAdmin
           .from("products")
@@ -133,31 +130,20 @@ export const Route = createFileRoute("/api/checkout")({
           });
         }
 
+        // El envío NO se cobra por este sistema: es gratis solo informativamente
+        // sobre $250.000 (ver copy en el sitio) o, si no aplica, lo cubre el
+        // comprador por fuera de Wompi. amountInCents = subtotal de productos.
         const subtotalCop = lines.reduce((sum, l) => sum + l.unitPriceCop * l.qty, 0);
+        const amountInCents = subtotalCop * 100;
 
-        // 2) Envío: solo nacional, por departamento, gratis sobre el umbral.
-        let shippingCop = 0;
-        if (subtotalCop < FREE_SHIPPING_THRESHOLD_COP) {
-          const { data: zone } = await supabaseAdmin
-            .from("shipping_zones")
-            .select("shipping_cop")
-            .eq("department", department)
-            .maybeSingle();
-          shippingCop = zone?.shipping_cop ?? DEFAULT_SHIPPING_COP;
-        }
-
-        const totalCop = subtotalCop + shippingCop;
-        const amountInCents = totalCop * 100;
-
-        // 3) Reservar stock de forma atómica (evita sobreventa por condición
-        //    de carrera): solo descuenta si todavía hay suficiente stock.
+        // Reservar stock de forma atómica (evita sobreventa por condición de
+        // carrera): solo descuenta si todavía hay suficiente stock.
         for (const line of lines) {
           const { data: updated, error: stockError } = await supabaseAdmin.rpc(
             "decrement_stock_if_available",
             { p_size_id: line.sizeRowId, p_qty: line.qty },
           );
           if (stockError || updated !== true) {
-            // Revertir lo ya descontado en este mismo intento antes de fallar.
             const idx = lines.indexOf(line);
             for (const done of lines.slice(0, idx)) {
               await supabaseAdmin.rpc("increment_stock", {
@@ -185,14 +171,12 @@ export const Route = createFileRoute("/api/checkout")({
             reference,
             items: itemsSnapshot,
             subtotal_cop: subtotalCop,
-            shipping_cop: shippingCop,
             amount_in_cents: amountInCents,
             currency: CURRENCY,
             status: "pending",
             customer_name: name,
             customer_phone: phone,
             customer_email: email || null,
-            shipping_department: department,
             shipping_city: city,
             shipping_address: address,
           })
@@ -201,7 +185,6 @@ export const Route = createFileRoute("/api/checkout")({
 
         if (dbError || !order) {
           console.error("[checkout] Error creando el pedido:", dbError);
-          // Devolver el stock reservado si el pedido no se pudo crear.
           for (const line of lines) {
             await supabaseAdmin.rpc("increment_stock", { p_size_id: line.sizeRowId, p_qty: line.qty });
           }
@@ -219,8 +202,7 @@ export const Route = createFileRoute("/api/checkout")({
           publicKey,
           signature,
           subtotalCop,
-          shippingCop,
-          totalCop,
+          totalCop: subtotalCop,
         });
       },
     },
