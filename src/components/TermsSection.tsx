@@ -18,15 +18,11 @@ const TERMS = [
   },
   {
     t: "Envíos",
-    d: "Solo envíos nacionales dentro de Colombia. Cada camisa es realizada a mano, por lo que el despacho se hace 1 semana después de la compra. El tiempo de entrega adicional depende de la región del país donde te encuentres. PRÓXIMAMENTE ENVÍOS INTERNACIONALES.",
+    d: "Solo envíos nacionales dentro de Colombia. Cada camisa es realizada a mano, por lo que el despacho se hace 1 semana después de la compra. El envío es gratuito en compras superiores a $250.000; por debajo de ese monto, el costo de envío corre por cuenta del comprador y se coordina aparte (no se cobra a través de Wompi). PRÓXIMAMENTE ENVÍOS INTERNACIONALES.",
   },
   {
     t: "Cambios y devoluciones",
     d: "Por tratarse de un drop limitado de edición única, no hay devoluciones por cambio de opinión. Solo se aceptan cambios por defectos de fábrica reportados dentro de las 48 horas tras la entrega, con foto y empaque original.",
-  },
-  {
-    t: "Stock limitado",
-    d: "El drop está limitado a 6 unidades. Una vez agotado no se reimprime ni se vuelve a producir.",
   },
   {
     t: "Datos personales",
@@ -67,7 +63,7 @@ export default function TermsSection() {
         </div>
 
         <p className="mt-10 text-xs text-white/45 tracking-wide">
-          Al apartar tu camisa por WhatsApp aceptas estos términos. Última actualización: 2026.
+          Al confirmar tu compra aceptas estos términos. Última actualización: 2026.
         </p>
       </div>
     </section>

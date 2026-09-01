@@ -1,4 +1,5 @@
 import { motion } from "motion/react";
+import { WompiVerifiedBadge, WompiBancolombiaLogos } from "@/components/TrustBadges";
 
 const fadeUp = {
   initial: { opacity: 0, y: 40 },
@@ -13,7 +14,7 @@ const METHODS = [
   { tag: "Wompi", title: "Nequi", desc: "Aprueba el pago desde tu app Nequi en segundos." },
   { tag: "Wompi", title: "Botón Bancolombia", desc: "Paga con tu cuenta de ahorros o corriente Bancolombia." },
   { tag: "Wompi", title: "Corresponsales y efectivo", desc: "Genera tu recibo y paga en efectivo en los puntos habilitados por Wompi." },
-  { tag: "Envíos", title: "Envío nacional", desc: "Cada camisa es hecha a mano: despachamos 1 semana después de la compra. El tiempo de entrega depende de tu región." },
+  { tag: "Envíos", title: "Envío nacional", desc: "Cada camisa es hecha a mano: despachamos 1 semana después de la compra. Envío gratis en compras superiores a $250.000 (solo Colombia); por debajo de ese monto el envío corre por cuenta del comprador." },
 ];
 
 export default function CheckoutSection() {
@@ -27,6 +28,11 @@ export default function CheckoutSection() {
             Todos los pagos se procesan a través de la pasarela Wompi: tarjeta, PSE, Nequi, botón
             Bancolombia y efectivo en corresponsales. Envíos únicamente a nivel nacional (Colombia).
           </p>
+          <p className="mt-2 text-sm text-white/50 max-w-2xl">
+            Talla XXL tiene un recargo de $15.000. Envío gratis en compras superiores a $250.000;
+            por debajo de ese monto el envío corre por cuenta del comprador y se coordina aparte.
+          </p>
+          <WompiVerifiedBadge className="mt-4" />
         </motion.div>
 
         <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -43,6 +49,10 @@ export default function CheckoutSection() {
           <p className="mt-3 text-sm text-white/60">
             Por ahora todos los pedidos se despachan dentro de Colombia.
           </p>
+        </motion.div>
+
+        <motion.div {...fadeUp} className="mt-8">
+          <WompiBancolombiaLogos />
         </motion.div>
       </div>
     </section>

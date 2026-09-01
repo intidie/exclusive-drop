@@ -106,7 +106,7 @@ export default function SizeGuideModal({
             </div>
 
             <p className="mt-6 text-xs text-white/45">
-              ±1cm de tolerancia. Para dudas, escríbenos por WhatsApp antes de apartar.
+              ±1cm de tolerancia. Para dudas, escríbenos por Instagram antes de comprar.
             </p>
             </div>
           </motion.div>
@@ -119,8 +119,8 @@ export default function SizeGuideModal({
 function ShirtDiagram() {
   return (
     <svg viewBox="0 0 220 260" className="w-full max-w-xs mx-auto">
-      <g fill="none" stroke="black" strokeWidth="1.5">
-        {/* T-shirt silhouette */}
+      <g fill="none" stroke="white" strokeWidth="1.5">
+        {/* T-shirt silhouette — blanco para verse sobre el fondo oscuro del modal */}
         <path d="M50 40 L90 25 Q110 45 130 25 L170 40 L200 70 L175 95 L165 80 L165 230 L55 230 L55 80 L45 95 L20 70 Z" />
       </g>
       {/* Measurement lines */}
