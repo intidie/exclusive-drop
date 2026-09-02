@@ -67,13 +67,15 @@ function ProductPage() {
   const price = product.price ?? PRICE;
   const [size, setSize] = useState("XL");
   const [guideOpen, setGuideOpen] = useState(false);
-  const [added, setAdded] = useState(false);
+  const [justAdded, setJustAdded] = useState(false);
+  const [everAdded, setEverAdded] = useState(false);
   const { addItem, openCart } = useCart();
 
   function handleAddToCart() {
     addItem({ slug: product.slug, name: product.name, size });
-    setAdded(true);
-    setTimeout(() => setAdded(false), 1800);
+    setEverAdded(true);
+    setJustAdded(true);
+    setTimeout(() => setJustAdded(false), 1800);
   }
 
   return (
@@ -107,7 +109,7 @@ function ProductPage() {
                 height={1500}
                 loading={i === 0 ? "eager" : "lazy"}
                 decoding="async"
-                className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-150"
+                className="w-full h-full object-contain transition-transform duration-500 ease-out group-hover:scale-105"
               />
             </div>
           ))}
@@ -172,9 +174,9 @@ function ProductPage() {
             onClick={handleAddToCart}
             className="inline-flex items-center justify-center h-14 px-8 micro font-semibold bg-white text-black border border-white hover:bg-transparent hover:text-white transition-colors"
           >
-            {added ? "Agregado ✓" : "Agregar al carrito"}
+            {justAdded ? "Agregado ✓" : "Agregar al carrito"}
           </button>
-          {added && (
+          {everAdded && (
             <button type="button" onClick={openCart} className="micro underline underline-offset-4 text-left hover:opacity-60">
               Ver carrito →
             </button>

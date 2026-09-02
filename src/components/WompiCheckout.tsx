@@ -177,7 +177,7 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[100] bg-black/85 flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-y-auto"
+          className="fixed inset-0 z-[100] bg-black/85 flex items-end sm:items-center justify-center p-0 sm:p-6"
           role="dialog"
           aria-modal="true"
           aria-label="Pago con Wompi"
@@ -187,9 +187,9 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 40, opacity: 0 }}
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            className="w-full sm:max-w-lg bg-black text-white border border-white/25 my-auto"
+            className="w-full sm:max-w-lg max-h-[92dvh] sm:max-h-[85dvh] bg-black text-white border border-white/25 flex flex-col overscroll-contain"
           >
-            <div className="flex items-center justify-between border-b border-white/10 px-6 py-4 sticky top-0 bg-black">
+            <div className="flex items-center justify-between border-b border-white/10 px-6 py-4 shrink-0">
               <p className="text-[10px] tracking-[0.3em] uppercase">Pago seguro · Wompi</p>
               <button
                 onClick={onClose}
@@ -200,7 +200,7 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
               </button>
             </div>
 
-            <div className="px-6 py-6 space-y-4">
+            <div className="px-6 py-6 space-y-4 overflow-y-auto overscroll-contain flex-1">
               {phase === "form" && (
                 <form onSubmit={handleSubmit} className="space-y-3">
                   <h3 className="text-2xl font-display tracking-wide">Tu pedido</h3>
@@ -276,9 +276,20 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                   <button
                     type="submit"
                     disabled={busy || items.length === 0}
-                    className="w-full h-14 text-xs tracking-[0.2em] uppercase font-semibold border border-white/25 hover:bg-white hover:text-black transition-colors disabled:opacity-40"
+                    className="w-full h-16 flex flex-col items-center justify-center gap-1 bg-black border border-white/25 hover:border-white transition-colors disabled:opacity-40"
                   >
-                    {busy ? "Preparando pago…" : "Pagar con Wompi"}
+                    {busy ? (
+                      <span className="text-xs tracking-[0.2em] uppercase font-semibold">Preparando pago…</span>
+                    ) : (
+                      <>
+                        <span className="text-[9px] tracking-[0.2em] uppercase text-white/50">Pagar de forma segura</span>
+                        <span className="flex items-center gap-3">
+                          <img src="/images/wompi-white.png" alt="Wompi" className="h-4 w-auto" />
+                          <span className="text-white/20 text-sm leading-none">×</span>
+                          <img src="/images/bancolombia-white.png" alt="Bancolombia" className="h-3.5 w-auto" />
+                        </span>
+                      </>
+                    )}
                   </button>
                   <WompiVerifiedBadge className="justify-center" />
                   <p className="text-[10px] text-white/45 leading-relaxed">
