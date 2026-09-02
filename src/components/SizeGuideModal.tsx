@@ -40,12 +40,12 @@ export default function SizeGuideModal({
             onClick={(e) => e.stopPropagation()}
             className="bg-black text-white w-full max-w-5xl max-h-[92vh] overflow-y-auto border border-white/25 relative"
           >
-            <div className="sticky top-0 z-10 flex justify-end p-2 bg-white border-b border-white/10">
+            <div className="sticky top-0 z-10 flex justify-end p-2 bg-neutral-900 border-b border-white/10">
               <button
                 onClick={onClose}
                 aria-label="Cerrar"
                 type="button"
-                className="w-11 h-11 flex items-center justify-center border border-white/25 text-2xl leading-none active:bg-black active:text-white hover:bg-white hover:text-black transition-colors"
+                className="w-11 h-11 flex items-center justify-center border border-white/40 text-white text-2xl leading-none active:bg-white active:text-black hover:bg-white hover:text-black transition-colors"
               >
                 ×
               </button>
