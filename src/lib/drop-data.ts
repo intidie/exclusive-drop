@@ -24,6 +24,9 @@ export type Product = {
   images: string[];
   tag: string;
   description: string;
+  price?: number; // Solo para mostrar en el sitio antes de pagar. Si no se
+  // especifica, se usa PRICE. El monto real que se cobra SIEMPRE sale de
+  // `products.price_cop` en Supabase (ver src/routes/api.checkout.ts).
 };
 
 export const PRODUCTS: Product[] = [
@@ -31,10 +34,11 @@ export const PRODUCTS: Product[] = [
     slug: "machine-girl",
     name: "INTI(t) MACHINE GIRL",
     image: "/images/machine_girl.webp",
-    images: ["/images/machine_girl.webp"],
+    images: ["/images/machine_girl.webp", "/images/machine_girl_back.webp"],
     tag: "Footwork / Breakcore",
     description:
       "Camisa oversize negra con print full-front inspirado en el artwork japonés de breakcore. Tipografía kanji y gradientes ácidos sobre algodón pesado.",
+    price: 79999,
   },
   {
     slug: "aphex",

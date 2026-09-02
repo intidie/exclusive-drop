@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCart } from "@/lib/cart-context";
-import { FREE_SHIPPING_THRESHOLD_COP, PRICE, XXL_SURCHARGE_COP } from "@/lib/drop-data";
+import { FREE_SHIPPING_THRESHOLD_COP, PRICE, PRODUCTS, XXL_SURCHARGE_COP } from "@/lib/drop-data";
 import WompiCheckout from "@/components/WompiCheckout";
 
 // Precio estimado para mostrar en el carrito antes de pagar. El monto real
 // que se cobra siempre lo recalcula el servidor (src/routes/api.checkout.ts)
 // contra Supabase — esto es solo para que el usuario vea un total mientras
 // arma su pedido.
-function estimateUnitPrice(size: string) {
-  return PRICE + (size === "XXL" ? XXL_SURCHARGE_COP : 0);
+function estimateUnitPrice(slug: string, size: string) {
+  const base = PRODUCTS.find((p) => p.slug === slug)?.price ?? PRICE;
+  return base + (size === "XXL" ? XXL_SURCHARGE_COP : 0);
 }
 
 export function CartButton() {
@@ -46,7 +47,7 @@ export default function CartDrawer() {
     return () => document.removeEventListener("keydown", onKey);
   }, [isOpen, closeCart]);
 
-  const subtotal = items.reduce((sum, i) => sum + estimateUnitPrice(i.size) * i.qty, 0);
+  const subtotal = items.reduce((sum, i) => sum + estimateUnitPrice(i.slug, i.size) * i.qty, 0);
   const missing = Math.max(0, FREE_SHIPPING_THRESHOLD_COP - subtotal);
   const progress = Math.min(100, Math.round((subtotal / FREE_SHIPPING_THRESHOLD_COP) * 100));
 
@@ -120,7 +121,7 @@ export default function CartDrawer() {
                         </button>
                       </div>
                       <p className="text-sm font-mono">
-                        ${(estimateUnitPrice(i.size) * i.qty).toLocaleString("es-CO")}
+                        ${(estimateUnitPrice(i.slug, i.size) * i.qty).toLocaleString("es-CO")}
                       </p>
                     </div>
                   </div>

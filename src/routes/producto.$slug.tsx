@@ -48,7 +48,7 @@ export const Route = createFileRoute("/producto/$slug")({
             brand: { "@type": "Brand", name: "INTI(t)" },
             offers: {
               "@type": "Offer",
-              price: PRICE,
+              price: product.price ?? PRICE,
               priceCurrency: "COP",
               availability: "https://schema.org/InStock",
               url: `https://inti-net.vercel.app${url}`,
@@ -64,6 +64,7 @@ export const Route = createFileRoute("/producto/$slug")({
 
 function ProductPage() {
   const { product } = Route.useLoaderData();
+  const price = product.price ?? PRICE;
   const [size, setSize] = useState("XL");
   const [guideOpen, setGuideOpen] = useState(false);
   const [added, setAdded] = useState(false);
@@ -122,10 +123,10 @@ function ProductPage() {
               <CountdownTimer />
             </div>
             <p className="mt-1 text-4xl md:text-5xl font-black tracking-tight animate-price-flash">
-              {formatCOP(PRICE)}
+              {formatCOP(price)}
             </p>
             <p className="text-sm text-white/60 mt-1 font-mono">
-              ≈ {formatUSD(Math.round(PRICE / USD_TRM))} USD{" "}
+              ≈ {formatUSD(Math.round(price / USD_TRM))} USD{" "}
               <span className="text-xs opacity-60">(TRM {formatCOP(USD_TRM)}/USD)</span>
             </p>
             <p className="text-xs text-white/50 mt-1">

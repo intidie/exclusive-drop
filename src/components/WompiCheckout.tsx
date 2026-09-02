@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { CONTACT, FREE_SHIPPING_THRESHOLD_COP, PRICE, XXL_SURCHARGE_COP } from "@/lib/drop-data";
+import { CONTACT, FREE_SHIPPING_THRESHOLD_COP, PRICE, PRODUCTS, XXL_SURCHARGE_COP } from "@/lib/drop-data";
 import type { CartItem } from "@/lib/cart-context";
 import { WompiVerifiedBadge } from "@/components/TrustBadges";
 
@@ -60,8 +60,9 @@ function saveDraft(draft: Draft) {
 // Estimado de precio para la interfaz (barra de envío gratis, etc.). El
 // monto real que se cobra SIEMPRE lo calcula el servidor con los precios
 // vigentes en Supabase — esto es solo una vista previa.
-function estimateUnitPrice(size: string) {
-  return PRICE + (size === "XXL" ? XXL_SURCHARGE_COP : 0);
+function estimateUnitPrice(slug: string, size: string) {
+  const base = PRODUCTS.find((p) => p.slug === slug)?.price ?? PRICE;
+  return base + (size === "XXL" ? XXL_SURCHARGE_COP : 0);
 }
 
 export default function WompiCheckout({ open, onClose, items }: Props) {
@@ -92,7 +93,7 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
     });
   }
 
-  const estimatedSubtotal = items.reduce((sum, i) => sum + estimateUnitPrice(i.size) * i.qty, 0);
+  const estimatedSubtotal = items.reduce((sum, i) => sum + estimateUnitPrice(i.slug, i.size) * i.qty, 0);
   const missingForFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD_COP - estimatedSubtotal);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
