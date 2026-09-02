@@ -301,6 +301,12 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                 </form>
               )}
 
+              {/* Colchón de scroll: en móviles donde el navegador no
+                  reajusta el layout al abrir el teclado (interactive-widget
+                  no soportado), este espacio permite seguir bajando hasta
+                  destapar por completo el último campo. */}
+              {phase === "form" && <div className="h-[45vh] shrink-0" aria-hidden="true" />}
+
               {phase === "sent" && (
                 <div className="space-y-4 py-4">
                   <h3 className="text-3xl font-display tracking-wide">Pedido registrado</h3>

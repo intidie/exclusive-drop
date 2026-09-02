@@ -65,7 +65,12 @@ export default function CatalogSection() {
               <div className="p-3 md:p-4">
                 <p className="micro text-white/40">{p.tag}</p>
                 <h3 className="mt-1 text-lg md:text-2xl font-display tracking-wide leading-none">{p.name}</h3>
-                <p className="mt-2 text-sm font-mono text-white/70">{formatCOP(PRICE)}</p>
+                <div className="mt-2 flex items-center gap-2 flex-wrap">
+                  <p className="text-sm font-mono text-white/70">{formatCOP(p.price ?? PRICE)}</p>
+                  <span className="text-[9px] tracking-[0.15em] uppercase bg-red-600 text-white px-1.5 py-0.5">
+                    Oferta única
+                  </span>
+                </div>
               </div>
             </Link>
           ))}
