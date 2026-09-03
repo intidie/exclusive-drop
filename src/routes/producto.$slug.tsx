@@ -81,7 +81,7 @@ function ProductPage() {
   return (
     <main className="bg-black text-white min-h-screen font-sans grain">
       <header className="relative z-10 border-b border-white/10 px-6 py-4 flex items-center justify-between">
-        <Link to="/" className="micro font-semibold hover:opacity-60">
+        <Link to="/" className="font-mono text-sm md:text-[10px] tracking-[0.34em] uppercase font-semibold hover:opacity-60">
           ← INTI(t)
         </Link>
         <a
