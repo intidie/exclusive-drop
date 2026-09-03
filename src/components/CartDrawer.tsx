@@ -151,7 +151,7 @@ export default function CartDrawer() {
                   <button
                     type="button"
                     onClick={() => setCheckoutOpen(true)}
-                    className="w-full bg-white text-black hover:bg-transparent hover:text-white border border-white transition-colors"
+                    className="group w-full bg-white text-black hover:bg-transparent hover:text-white border border-white transition-colors"
                   >
                     <span className="flex items-center justify-center gap-2 h-12">
                       <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.6">
@@ -161,9 +161,9 @@ export default function CartDrawer() {
                       </svg>
                       <span className="text-sm tracking-[0.2em] uppercase font-semibold">Comprar</span>
                     </span>
-                    <span className="flex items-center justify-center gap-2 h-8 border-t border-black/10 hover:border-white/10">
-                      <img src="/images/bancolombia-white.png" alt="Bancolombia" className="h-3.5 w-auto" />
-                      <span className="text-[9px] tracking-[0.15em] uppercase text-white/70">Compra verificada por Bancolombia</span>
+                    <span className="flex items-center justify-center gap-2 h-8 border-t border-black/10 group-hover:border-white/10">
+                      <img src="/images/bancolombia-white.png" alt="Bancolombia" className="h-3.5 w-auto invert group-hover:invert-0" />
+                      <span className="text-[9px] tracking-[0.15em] uppercase opacity-70">Compra verificada por Bancolombia</span>
                     </span>
                   </button>
                 </div>
