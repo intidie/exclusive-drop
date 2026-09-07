@@ -36,7 +36,7 @@ export default function CatalogSection() {
             decoding="async"
             className="w-full max-w-xs md:max-w-sm h-auto -mt-2 opacity-40 mix-blend-screen animate-decor-drift"
           />
-          <p className="micro mt-4 text-white/45">Catálogo · 05 piezas · edición única</p>
+          <p className="micro mt-4 text-white/45">Catálogo · edición única</p>
 
         </motion.div>
 
@@ -76,6 +76,29 @@ export default function CatalogSection() {
               </div>
             </Link>
           ))}
+          <div
+            className="relative flex min-h-full flex-col overflow-hidden bg-black"
+            aria-label="Próximamente: nueva camisa"
+          >
+            <div className="matrix-preview relative aspect-[4/5] overflow-hidden bg-neutral-950" aria-hidden="true">
+              {Array.from({ length: 10 }, (_, i) => (
+                <span key={i} className="matrix-column">
+                  01INTI(t)10110100NET01001101
+                </span>
+              ))}
+              <div className="absolute inset-0 z-10 flex items-center justify-center px-4 text-center">
+                <p className="font-mono text-xl font-semibold uppercase tracking-[0.24em] text-white md:text-3xl">
+                  Próximamente
+                </p>
+              </div>
+            </div>
+            <div className="p-3 md:p-4">
+              <p className="micro text-white/40">Próximo archivo</p>
+              <p className="mt-1 text-lg font-display uppercase tracking-wide leading-none text-white/70 md:text-2xl">
+                Señal entrante
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
