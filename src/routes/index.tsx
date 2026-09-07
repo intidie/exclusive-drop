@@ -22,10 +22,10 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Drop exclusivo de camisas LIVE LEAKS by INTI(t). 5 piezas, todas las tallas. Pago seguro con Wompi y envíos nacionales.",
+          "Drop exclusivo de camisas LIVE LEAKS by INTI(t). Todas las tallas, pago seguro con Wompi y envíos nacionales.",
       },
       { property: "og:title", content: "LIVE LEAKS by INTI(t) — Drop único" },
-      { property: "og:description", content: "Drop exclusivo de camisas. 5 piezas, todas las tallas disponibles." },
+      { property: "og:description", content: "Drop exclusivo de camisas LIVE LEAKS by INTI(t), con todas las tallas disponibles." },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "/" },
       { name: "twitter:card", content: "summary_large_image" },
