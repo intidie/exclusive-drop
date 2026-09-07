@@ -1,6 +1,16 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { CONTACT, FREE_SHIPPING_THRESHOLD_COP, PRICE, PRODUCTS, XXL_SURCHARGE_COP } from "@/lib/drop-data";
+import {
+  CONTACT,
+  FREE_SHIPPING_THRESHOLD_COP,
+  PRICE,
+  PRODUCTS,
+  XXL_SURCHARGE_COP,
+  copToUsd,
+  formatCop,
+  formatUsd,
+  type CountryCode,
+} from "@/lib/drop-data";
 import type { CartItem } from "@/lib/cart-context";
 import { WompiVerifiedBadge } from "@/components/TrustBadges";
 
@@ -35,8 +45,17 @@ function loadWidget(): Promise<void> {
 // nunca en el servidor. Así, si el formulario se cierra por accidente, no
 // hay que volver a escribir todo.
 const DRAFT_KEY = "inti-checkout-draft-v1";
-type Draft = { name: string; phone: string; email: string; city: string; address: string };
-const EMPTY_DRAFT: Draft = { name: "", phone: "", email: "", city: "", address: "" };
+type Draft = {
+  name: string;
+  phone: string;
+  email: string;
+  city: string;
+  address: string;
+  // "" significa que el usuario todavía no ha elegido: no asumimos un país
+  // por defecto, porque de eso depende la moneda y el monto que se cobra.
+  country: CountryCode | "";
+};
+const EMPTY_DRAFT: Draft = { name: "", phone: "", email: "", city: "", address: "", country: "" };
 
 function loadDraft(): Draft {
   if (typeof window === "undefined") return EMPTY_DRAFT;
@@ -57,10 +76,11 @@ function saveDraft(draft: Draft) {
   }
 }
 
-// Estimado de precio para la interfaz (barra de envío gratis, etc.). El
-// monto real que se cobra SIEMPRE lo calcula el servidor con los precios
-// vigentes en Supabase — esto es solo una vista previa.
-function estimateUnitPrice(slug: string, size: string) {
+// Estimado de precio para la interfaz (barra de envío gratis, vista previa
+// en USD, etc). El monto real que se cobra SIEMPRE lo calcula el servidor
+// con los precios vigentes en Supabase y la TRM fija — esto es solo una
+// vista previa para que el usuario sepa qué esperar antes de pagar.
+function estimateUnitPriceCop(slug: string, size: string) {
   const base = PRODUCTS.find((p) => p.slug === slug)?.price ?? PRICE;
   return base + (size === "XXL" ? XXL_SURCHARGE_COP : 0);
 }
@@ -70,7 +90,7 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
-  const [totals, setTotals] = useState<{ subtotalCop: number; totalCop: number } | null>(null);
+  const [totals, setTotals] = useState<{ total: number; currency: "COP" | "USD" } | null>(null);
 
   useEffect(() => {
     if (open) setDraft(loadDraft());
@@ -93,20 +113,33 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
     });
   }
 
-  const estimatedSubtotal = items.reduce((sum, i) => sum + estimateUnitPrice(i.slug, i.size) * i.qty, 0);
-  const missingForFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD_COP - estimatedSubtotal);
+  const estimatedSubtotalCop = items.reduce(
+    (sum, i) => sum + estimateUnitPriceCop(i.slug, i.size) * i.qty,
+    0,
+  );
+  const estimatedSubtotalUsd = copToUsd(estimatedSubtotalCop);
+  const isNational = draft.country === "CO";
+  const isInternational = draft.country === "INTL";
+  const missingForFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD_COP - estimatedSubtotalCop);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+
+    if (!draft.country) {
+      setError("Selecciona si tu compra es nacional (Colombia) o internacional.");
+      return;
+    }
+
     setBusy(true);
 
     try {
       if (items.length === 0) throw new Error("Tu carrito está vacío.");
 
-      // El precio, el stock, la referencia y la firma de integridad los
-      // calcula el servidor (ver src/routes/api.checkout.ts). El cliente
-      // nunca decide cuánto se cobra ni descuenta el inventario.
+      // El precio, la moneda, el stock, la referencia y la firma de
+      // integridad los calcula el servidor (ver src/routes/api.checkout.ts)
+      // a partir de "country". El cliente nunca decide cuánto se cobra ni
+      // descuenta el inventario — solo indica a qué categoría pertenece.
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -117,17 +150,19 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
           email: draft.email,
           city: draft.city,
           address: draft.address,
+          country: draft.country,
         }),
       });
 
       const checkout = (await res.json().catch(() => null)) as {
         reference?: string;
         amountInCents?: number;
-        currency?: string;
+        currency?: "COP" | "USD";
+        country?: CountryCode;
         publicKey?: string;
         signature?: string;
-        subtotalCop?: number;
-        totalCop?: number;
+        subtotal?: number;
+        total?: number;
         error?: string;
       } | null;
 
@@ -135,8 +170,8 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
         throw new Error(checkout?.error ?? "No pudimos registrar tu pedido.");
       }
 
-      if (checkout.subtotalCop != null && checkout.totalCop != null) {
-        setTotals({ subtotalCop: checkout.subtotalCop, totalCop: checkout.totalCop });
+      if (checkout.total != null && checkout.currency) {
+        setTotals({ total: checkout.total, currency: checkout.currency });
       }
 
       await loadWidget();
@@ -214,14 +249,63 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                     ))}
                   </ul>
 
-                  {missingForFreeShipping > 0 ? (
-                    <p className="text-[11px] text-white/50">
-                      Agrega ${missingForFreeShipping.toLocaleString("es-CO")} más y el envío es
-                      gratis (solo Colombia).
+                  {/* Selección obligatoria de categoría de precio. Solo hay
+                      dos casos: nacional (Colombia, COP) o internacional
+                      (USD, precio fijo con TRM de negocio). No hay un valor
+                      preseleccionado a propósito. */}
+                  <div>
+                    <p className="text-[10px] tracking-[0.2em] uppercase text-white/55 mb-2">
+                      ¿Dónde recibes tu pedido?
                     </p>
-                  ) : (
-                    <p className="text-[11px] text-emerald-400">
-                      Tu compra supera $250.000 — el envío nacional es gratis.
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => updateDraft({ country: "CO" })}
+                        aria-pressed={isNational}
+                        className={`border px-3 py-3 text-xs tracking-[0.1em] uppercase transition-colors ${
+                          isNational
+                            ? "bg-white text-black border-white"
+                            : "border-white/25 hover:border-white/60"
+                        }`}
+                      >
+                        Colombia (COP)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateDraft({ country: "INTL" })}
+                        aria-pressed={isInternational}
+                        className={`border px-3 py-3 text-xs tracking-[0.1em] uppercase transition-colors ${
+                          isInternational
+                            ? "bg-white text-black border-white"
+                            : "border-white/25 hover:border-white/60"
+                        }`}
+                      >
+                        Internacional (USD)
+                      </button>
+                    </div>
+                  </div>
+
+                  {isNational && (
+                    <p className="text-[11px] text-white/60">
+                      Subtotal estimado: {formatCop(estimatedSubtotalCop)}.{" "}
+                      {missingForFreeShipping > 0 ? (
+                        <>
+                          Agrega {formatCop(missingForFreeShipping)} más y el envío es gratis (solo
+                          Colombia).
+                        </>
+                      ) : (
+                        <span className="text-emerald-400">
+                          Tu compra supera $250.000 — el envío nacional es gratis.
+                        </span>
+                      )}
+                    </p>
+                  )}
+
+                  {isInternational && (
+                    <p className="text-[11px] text-white/60">
+                      Precio fijo estimado: {formatUsd(estimatedSubtotalUsd)}. Los envíos
+                      internacionales se coordinan aparte con nuestro equipo por Instagram después
+                      del pago.
                     </p>
                   )}
 
@@ -261,7 +345,7 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                     onChange={(e) => updateDraft({ city: e.target.value })}
                     required
                     maxLength={60}
-                    placeholder="Ciudad"
+                    placeholder={isInternational ? "Ciudad / país" : "Ciudad"}
                     className={field}
                   />
                   <input
@@ -292,12 +376,20 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                     )}
                   </button>
                   <WompiVerifiedBadge className="justify-center" />
-                  <p className="text-[10px] text-white/45 leading-relaxed">
-                    Envío nacional: tu camisa se hace a mano y se despacha 1 semana después de la
-                    compra. Envío gratis en compras superiores a $250.000 (solo Colombia); por
-                    debajo de ese monto, el envío corre por cuenta del comprador y se coordina
-                    aparte.
-                  </p>
+                  {isInternational ? (
+                    <p className="text-[10px] text-white/45 leading-relaxed">
+                      Pago internacional: precio fijo en dólares. Tu camisa se hace a mano y se
+                      despacha 1 semana después de la compra; el envío internacional se coordina
+                      aparte con nuestro equipo.
+                    </p>
+                  ) : (
+                    <p className="text-[10px] text-white/45 leading-relaxed">
+                      Envío nacional: tu camisa se hace a mano y se despacha 1 semana después de la
+                      compra. Envío gratis en compras superiores a $250.000 (solo Colombia); por
+                      debajo de ese monto, el envío corre por cuenta del comprador y se coordina
+                      aparte.
+                    </p>
+                  )}
                 </form>
               )}
 
@@ -314,7 +406,9 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                     <div className="text-sm text-white/70 space-y-1 border-t border-white/10 pt-3">
                       <div className="flex justify-between font-semibold text-white">
                         <span>Total</span>
-                        <span>${totals.totalCop.toLocaleString("es-CO")}</span>
+                        <span>
+                          {totals.currency === "USD" ? formatUsd(totals.total) : formatCop(totals.total)}
+                        </span>
                       </div>
                     </div>
                   )}

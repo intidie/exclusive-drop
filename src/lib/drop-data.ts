@@ -10,12 +10,37 @@ export const PRICE = 89999;
 export const XXL_SURCHARGE_COP = 15000;
 
 export const ORIGINAL_PRICE = 99999;
+
+// TRM fija de negocio para pagos internacionales (NO es la tasa de mercado
+// del día). Debe coincidir SIEMPRE con la constante USD_TRM definida en
+// src/routes/api.checkout.ts, que es la que realmente calcula el monto que
+// se cobra. Aquí solo se usa para mostrar el ESTIMADO en dólares antes de
+// pagar.
 export const USD_TRM = 4000;
 
 // Envío nacional (Colombia): gratis en compras superiores a este monto.
 // Por debajo del umbral, el envío corre por cuenta del cliente y se
-// coordina aparte (no se cobra a través de Wompi).
+// coordina aparte (no se cobra a través de Wompi). Aplica solo a pedidos
+// nacionales (country = "CO"); los envíos internacionales se coordinan
+// siempre aparte con el cliente.
 export const FREE_SHIPPING_THRESHOLD_COP = 250000;
+
+export type CountryCode = "CO" | "INTL";
+
+export function formatCop(cop: number): string {
+  return `$${Math.round(cop).toLocaleString("es-CO")}`;
+}
+
+// Convierte un valor en COP a su equivalente fijo en USD usando la TRM de
+// negocio. Es solo para PREVISUALIZAR: el monto real que se cobra siempre
+// lo recalcula el servidor en src/routes/api.checkout.ts.
+export function copToUsd(cop: number): number {
+  return Math.round((cop / USD_TRM) * 100) / 100;
+}
+
+export function formatUsd(usd: number): string {
+  return `US$${usd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
 
 export type Product = {
   slug: string;

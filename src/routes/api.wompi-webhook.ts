@@ -63,6 +63,10 @@ export const Route = createFileRoute("/api/wompi-webhook")({
 
         // 1) Verificar el checksum firmado por Wompi con nuestro secreto de
         //    eventos: así confirmamos que el evento vino realmente de Wompi.
+        //    Este mismo secreto de eventos sirve tanto para transacciones
+        //    nacionales (COP) como internacionales (USD): Wompi firma el
+        //    evento completo, incluyendo currency, así que un evento
+        //    reindexado a otra moneda no pasaría la verificación.
         const concatenated =
           signature.properties.map((p) => String(getByPath(payload, p) ?? "")).join("") +
           String(timestamp) +
@@ -79,6 +83,7 @@ export const Route = createFileRoute("/api/wompi-webhook")({
         const wompiStatus = String(transaction["status"] ?? "");
         const wompiTransactionId = String(transaction["id"] ?? "");
         const wompiAmountInCents = Number(transaction["amount_in_cents"] ?? -1);
+        const wompiCurrency = String(transaction["currency"] ?? "");
 
         const mappedStatus = STATUS_MAP[wompiStatus];
         if (!reference || !mappedStatus) {
@@ -87,11 +92,13 @@ export const Route = createFileRoute("/api/wompi-webhook")({
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-        // 2) Defensa adicional: el monto reportado por Wompi debe coincidir
-        //    con el que nosotros calculamos y guardamos al crear el pedido.
+        // 2) Defensa adicional: el monto Y LA MONEDA reportados por Wompi
+        //    deben coincidir exactamente con lo que nosotros calculamos y
+        //    guardamos al crear el pedido (nacional=COP, internacional=USD
+        //    con TRM fija). Si algo no coincide, no se aprueba el pedido.
         const { data: order, error: fetchError } = await supabaseAdmin
           .from("orders")
-          .select("id, amount_in_cents, status, items")
+          .select("id, amount_in_cents, currency, status, items")
           .eq("reference", reference)
           .single();
 
@@ -100,9 +107,9 @@ export const Route = createFileRoute("/api/wompi-webhook")({
           return jsonResponse({ ok: true, ignored: true });
         }
 
-        if (order.amount_in_cents !== wompiAmountInCents) {
+        if (order.amount_in_cents !== wompiAmountInCents || order.currency !== wompiCurrency) {
           console.error(
-            `[wompi-webhook] Monto no coincide para ${reference}: esperado ${order.amount_in_cents}, recibido ${wompiAmountInCents}.`,
+            `[wompi-webhook] Monto/moneda no coinciden para ${reference}: esperado ${order.amount_in_cents} ${order.currency}, recibido ${wompiAmountInCents} ${wompiCurrency}.`,
           );
           return jsonResponse({ ok: true, ignored: true });
         }

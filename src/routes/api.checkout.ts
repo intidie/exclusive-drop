@@ -1,8 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 
-const CURRENCY = "COP";
+// TRM fija de negocio para pagos internacionales. NO es la tasa de mercado
+// del día: es un valor fijo que la tienda decide, y solo cambia si se edita
+// este archivo (queda versionado en git). Debe coincidir con USD_TRM en
+// src/lib/drop-data.ts (que solo se usa para el ESTIMADO visual en el
+// frontend; el monto real que se cobra siempre sale de aquí).
+const USD_TRM = 4000;
+
 const VALID_SIZES = ["S", "M", "L", "XL", "XXL"];
+const VALID_COUNTRIES = ["CO", "INTL"] as const;
+type CountryCode = (typeof VALID_COUNTRIES)[number];
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -55,6 +63,22 @@ export const Route = createFileRoute("/api/checkout")({
         const city = sanitize(body["city"], 60);
         const address = sanitize(body["address"], 160);
 
+        // Único dato de "categoría de precio" que decide el cliente: solo
+        // hay dos casos válidos, nacional o internacional. Esto NO permite
+        // manipular el monto — cada categoría tiene un precio 100% calculado
+        // por el servidor más abajo. No hay valor por defecto silencioso: si
+        // no llega "CO" o "INTL" exactos, se rechaza la solicitud completa.
+        const rawCountry = sanitize(body["country"], 10).toUpperCase();
+        if (!VALID_COUNTRIES.includes(rawCountry as CountryCode)) {
+          return jsonResponse(
+            { error: "Selecciona si tu compra es nacional (Colombia) o internacional." },
+            400,
+          );
+        }
+        const country = rawCountry as CountryCode;
+        const isNational = country === "CO";
+        const currency = isNational ? "COP" : "USD";
+
         if (cart.length === 0) {
           return jsonResponse({ error: "El carrito está vacío o es inválido." }, 400);
         }
@@ -62,10 +86,27 @@ export const Route = createFileRoute("/api/checkout")({
           return jsonResponse({ error: "Faltan datos de envío." }, 400);
         }
 
-        const integritySecret = process.env["WOMPI_INTEGRITY_SECRET"]?.trim();
-        const publicKey = (process.env["VITE_WOMPI_PUBLIC_KEY"] ?? process.env["WOMPI_PUBLIC_KEY"])?.trim();
+        // Credenciales de Wompi. La pasarela internacional es LA MISMA
+        // integración de Wompi (mismo widget, mismo esquema de firma
+        // sha256(reference+amount+currency+secret)), cambiando currency a
+        // USD. Si configuras llaves específicas para cobros internacionales
+        // en el dashboard de Wompi, defínelas en WOMPI_INTL_PUBLIC_KEY /
+        // WOMPI_INTL_INTEGRITY_SECRET; si no existen, se reutilizan las
+        // llaves nacionales (útil mientras activas el producto internacional
+        // en Wompi).
+        const integritySecretCo = process.env["WOMPI_INTEGRITY_SECRET"]?.trim();
+        const publicKeyCo = (process.env["VITE_WOMPI_PUBLIC_KEY"] ?? process.env["WOMPI_PUBLIC_KEY"])?.trim();
+        const integritySecretIntl =
+          (process.env["WOMPI_INTL_INTEGRITY_SECRET"] ?? process.env["WOMPI_INTEGRITY_SECRET"])?.trim();
+        const publicKeyIntl =
+          (process.env["VITE_WOMPI_INTL_PUBLIC_KEY"] ?? process.env["WOMPI_INTL_PUBLIC_KEY"] ?? publicKeyCo)?.trim();
+
+        const integritySecret = isNational ? integritySecretCo : integritySecretIntl;
+        const publicKey = isNational ? publicKeyCo : publicKeyIntl;
         if (!integritySecret || !publicKey) {
-          console.error("[checkout] Faltan WOMPI_INTEGRITY_SECRET o VITE_WOMPI_PUBLIC_KEY.");
+          console.error(
+            `[checkout] Faltan credenciales de Wompi para country=${country} (currency=${currency}).`,
+          );
           return jsonResponse({ error: "El pago no está disponible en este momento." }, 500);
         }
 
@@ -130,11 +171,21 @@ export const Route = createFileRoute("/api/checkout")({
           });
         }
 
-        // El envío NO se cobra por este sistema: es gratis solo informativamente
-        // sobre $250.000 (ver copy en el sitio) o, si no aplica, lo cubre el
-        // comprador por fuera de Wompi. amountInCents = subtotal de productos.
+        // El envío NO se cobra por este sistema. El subtotal SIEMPRE nace en
+        // COP desde `products.price_cop` / `product_sizes.extra_price_cop`
+        // en Supabase — el cliente jamás envía ni puede alterar un precio.
+        // Si es nacional se cobra ese subtotal en COP tal cual. Si es
+        // internacional se convierte a USD con la TRM FIJA de negocio
+        // (constante, no de mercado) y ESE es el precio fijo que se cobra.
         const subtotalCop = lines.reduce((sum, l) => sum + l.unitPriceCop * l.qty, 0);
-        const amountInCents = subtotalCop * 100;
+
+        const fxRateUsed = isNational ? null : USD_TRM;
+        const amountInCents = isNational
+          ? subtotalCop * 100
+          : Math.round((subtotalCop / USD_TRM) * 100); // subtotal en USD, redondeado a centavos
+        const amountMajorUnits = isNational
+          ? subtotalCop
+          : Math.round((subtotalCop / USD_TRM) * 100) / 100;
 
         // Reservar stock de forma atómica (evita sobreventa por condición de
         // carrera): solo descuenta si todavía hay suficiente stock.
@@ -172,7 +223,9 @@ export const Route = createFileRoute("/api/checkout")({
             items: itemsSnapshot,
             subtotal_cop: subtotalCop,
             amount_in_cents: amountInCents,
-            currency: CURRENCY,
+            currency,
+            country,
+            fx_rate_used: fxRateUsed,
             status: "pending",
             customer_name: name,
             customer_phone: phone,
@@ -192,17 +245,19 @@ export const Route = createFileRoute("/api/checkout")({
         }
 
         const signature = await sha256Hex(
-          `${reference}${amountInCents}${CURRENCY}${integritySecret}`,
+          `${reference}${amountInCents}${currency}${integritySecret}`,
         );
 
         return jsonResponse({
           reference,
           amountInCents,
-          currency: CURRENCY,
+          currency,
+          country,
           publicKey,
           signature,
-          subtotalCop,
-          totalCop: subtotalCop,
+          subtotal: amountMajorUnits,
+          total: amountMajorUnits,
+          fxRateUsed,
         });
       },
     },
