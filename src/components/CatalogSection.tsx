@@ -78,19 +78,18 @@ export default function CatalogSection() {
           ))}
           <div
             className="relative flex min-h-full flex-col overflow-hidden bg-black"
-            aria-label="Próximamente: nueva camisa"
+            aria-label="Próximo archivo: señal entrante"
           >
-            <div className="matrix-preview relative aspect-[4/5] overflow-hidden bg-neutral-950" aria-hidden="true">
-              {Array.from({ length: 10 }, (_, i) => (
-                <span key={i} className="matrix-column">
-                  01INTI(t)10110100NET01001101
-                </span>
-              ))}
-              <div className="absolute inset-0 z-10 flex items-center justify-center px-4 text-center">
-                <p className="font-mono text-xl font-semibold uppercase tracking-[0.24em] text-white md:text-3xl">
-                  Próximamente
-                </p>
-              </div>
+            <div className="relative aspect-[4/5] overflow-hidden bg-neutral-950">
+              <img
+                src="/images/intinet-ornament.webp"
+                alt="inti-net — próximo archivo"
+                width={1200}
+                height={628}
+                loading="lazy"
+                decoding="async"
+                className="absolute inset-0 m-auto w-[85%] h-auto animate-logo-pulse"
+              />
             </div>
             <div className="p-3 md:p-4">
               <p className="micro text-white/40">Próximo archivo</p>
