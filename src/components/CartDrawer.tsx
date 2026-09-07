@@ -85,21 +85,30 @@ export default function CartDrawer() {
                 {items.length === 0 && (
                   <p className="text-sm text-white/50 py-10 text-center">Tu carrito está vacío.</p>
                 )}
-                {items.map((i) => (
-                  <div key={`${i.slug}-${i.size}`} className="border border-white/15 p-3 flex flex-col gap-2">
-                    <div className="flex justify-between items-start gap-2">
-                      <div>
-                        <p className="text-sm font-semibold">{i.name}</p>
-                        <p className="text-xs text-white/50">Talla {i.size}</p>
+                {items.map((i) => {
+                  const thumb = PRODUCTS.find((p) => p.slug === i.slug)?.image;
+                  return (
+                    <div key={`${i.slug}-${i.size}`} className="border border-white/15 p-3 flex flex-col gap-2">
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex items-start gap-3 min-w-0">
+                          {thumb && (
+                            <div className="w-14 h-14 shrink-0 border border-white/20 bg-white overflow-hidden">
+                              <img src={thumb} alt={i.name} className="w-full h-full object-cover" loading="lazy" />
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold leading-tight">{i.name}</p>
+                            <p className="text-xs text-white/50 mt-1">Talla {i.size}</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => removeItem(i.slug, i.size)}
+                          aria-label={`Quitar ${i.name}`}
+                          className="text-xs text-white/50 hover:text-red-400 underline underline-offset-4 shrink-0"
+                        >
+                          Quitar
+                        </button>
                       </div>
-                      <button
-                        onClick={() => removeItem(i.slug, i.size)}
-                        aria-label={`Quitar ${i.name}`}
-                        className="text-xs text-white/50 hover:text-red-400 underline underline-offset-4"
-                      >
-                        Quitar
-                      </button>
-                    </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center border border-white/25">
                         <button

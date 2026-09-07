@@ -276,17 +276,17 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                   <button
                     type="submit"
                     disabled={busy || items.length === 0}
-                    className="w-full h-16 flex flex-col items-center justify-center gap-1 bg-black border border-white/25 hover:border-white transition-colors disabled:opacity-40"
+                    className="w-full h-16 flex flex-col items-center justify-center gap-1 bg-white text-black border border-white hover:bg-transparent hover:text-white transition-colors disabled:opacity-40"
                   >
                     {busy ? (
                       <span className="text-xs tracking-[0.2em] uppercase font-semibold">Preparando pago…</span>
                     ) : (
                       <>
-                        <span className="text-[9px] tracking-[0.2em] uppercase text-white/50">Pagar de forma segura</span>
+                        <span className="text-[9px] tracking-[0.2em] uppercase text-black/50 group-hover:text-white/50">Pagar de forma segura</span>
                         <span className="flex items-center gap-3">
-                          <img src="/images/wompi-white.png" alt="Wompi" className="h-4 w-auto" />
-                          <span className="text-white/20 text-sm leading-none">×</span>
-                          <img src="/images/bancolombia-white.png" alt="Bancolombia" className="h-3.5 w-auto" />
+                          <img src="/images/wompi-white.png" alt="Wompi" className="h-4 w-auto invert" />
+                          <span className="text-black/20 text-sm leading-none">×</span>
+                          <img src="/images/bancolombia-white.png" alt="Bancolombia" className="h-3.5 w-auto invert" />
                         </span>
                       </>
                     )}
