@@ -10,7 +10,7 @@ export default function DecorLayer() {
         alt=""
         loading="lazy"
         decoding="async"
-        className="absolute -left-16 top-[6%] w-40 md:w-64 opacity-[0.10] mix-blend-screen animate-decor-drift"
+        className="absolute -left-16 top-[6%] w-40 md:w-64 opacity-[0.30] mix-blend-screen animate-decor-drift"
       />
       <img
         src="/images/decor-skeleton.webp"
