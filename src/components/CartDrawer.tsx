@@ -134,7 +134,8 @@ export default function CartDrawer() {
                       </p>
                     </div>
                   </div>
-                ))}
+                );
+              })}
               </div>
 
               {items.length > 0 && (
