@@ -18,11 +18,13 @@ export type Database = {
         Row: {
           access_token: string
           amount_in_cents: number
+          country: string | null
           created_at: string
           currency: string
           customer_email: string | null
           customer_name: string | null
           customer_phone: string | null
+          fx_rate_used: number | null
           id: string
           items: Json
           product_name: string | null
@@ -42,11 +44,13 @@ export type Database = {
         Insert: {
           access_token?: string
           amount_in_cents: number
+          country?: string | null
           created_at?: string
           currency?: string
           customer_email?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          fx_rate_used?: number | null
           id?: string
           items?: Json
           product_name?: string | null
@@ -66,11 +70,13 @@ export type Database = {
         Update: {
           access_token?: string
           amount_in_cents?: number
+          country?: string | null
           created_at?: string
           currency?: string
           customer_email?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          fx_rate_used?: number | null
           id?: string
           items?: Json
           product_name?: string | null
