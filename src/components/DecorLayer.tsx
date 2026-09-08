@@ -10,14 +10,14 @@ export default function DecorLayer() {
         alt=""
         loading="lazy"
         decoding="async"
-        className="absolute -left-16 top-[6%] w-40 md:w-64 opacity-[0.30] mix-blend-screen animate-decor-drift"
+        className="absolute -left-16 top-[6%] w-56 md:w-96 opacity-[0.65] mix-blend-screen animate-decor-drift"
       />
       <img
         src="/images/decor-skeleton.webp"
         alt=""
         loading="lazy"
         decoding="async"
-        className="absolute -right-20 top-[42%] w-48 md:w-72 opacity-[0.08] mix-blend-screen scale-x-[-1] animate-decor-drift"
+        className="absolute -right-20 top-[42%] w-64 md:w-[26rem] opacity-[0.65] mix-blend-screen scale-x-[-1] animate-decor-drift"
         style={{ animationDelay: "-6s" }}
       />
       <img
