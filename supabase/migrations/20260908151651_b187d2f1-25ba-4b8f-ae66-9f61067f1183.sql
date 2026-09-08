@@ -1,0 +1,1 @@
+CREATE POLICY "service_role_full_access" ON public.site_visits FOR ALL TO service_role USING (true) WITH CHECK (true);
