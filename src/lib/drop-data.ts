@@ -27,6 +27,35 @@ export const FREE_SHIPPING_THRESHOLD_COP = 250000;
 
 export type CountryCode = "CO" | "INTL";
 
+// Tipos de documento de identidad válidos para pedidos nacionales. El
+// value es lo que se envía y se guarda en Supabase (orders.doc_type); el
+// label es lo que ve el usuario.
+export const DOC_TYPES: { value: "CC" | "NIT" | "CE" | "PASAPORTE" | "OTRO"; label: string }[] = [
+  { value: "CC", label: "Cédula de ciudadanía" },
+  { value: "NIT", label: "NIT" },
+  { value: "CE", label: "Cédula de extranjería" },
+  { value: "PASAPORTE", label: "Pasaporte" },
+  { value: "OTRO", label: "Otro" },
+];
+
+// Países de destino más comunes para el formulario de pago internacional.
+// "Otro país" permite escribir manualmente cualquier otro destino. El
+// código de marcación (dial) es solo una ayuda visual en el placeholder del
+// teléfono, no se usa para calcular nada.
+export const DESTINATION_COUNTRIES = [
+  { name: "Estados Unidos", dial: "+1" },
+  { name: "México", dial: "+52" },
+  { name: "Canadá", dial: "+1" },
+  { name: "España", dial: "+34" },
+  { name: "Argentina", dial: "+54" },
+  { name: "Chile", dial: "+56" },
+  { name: "Perú", dial: "+51" },
+  { name: "Ecuador", dial: "+593" },
+  { name: "Panamá", dial: "+507" },
+  { name: "Costa Rica", dial: "+506" },
+  { name: "Otro país", dial: "" },
+];
+
 export function formatCop(cop: number): string {
   return `$${Math.round(cop).toLocaleString("es-CO")}`;
 }

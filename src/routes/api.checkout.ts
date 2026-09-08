@@ -11,6 +11,7 @@ const USD_TRM = 4000;
 const VALID_SIZES = ["S", "M", "L", "XL", "XXL"];
 const VALID_COUNTRIES = ["CO", "INTL"] as const;
 type CountryCode = (typeof VALID_COUNTRIES)[number];
+const VALID_DOC_TYPES = ["CC", "NIT", "CE", "PASAPORTE", "OTRO"] as const;
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -58,10 +59,21 @@ export const Route = createFileRoute("/api/checkout")({
           .filter((it) => it.slug && VALID_SIZES.includes(it.size));
 
         const name = sanitize(body["name"], 80);
-        const phone = sanitize(body["phone"], 25);
+        const phone = sanitize(body["phone"], 30);
         const email = sanitize(body["email"], 120);
         const city = sanitize(body["city"], 60);
-        const address = sanitize(body["address"], 160);
+        const address = sanitize(body["address"], 200);
+
+        // --- Campos obligatorios SOLO para pedidos nacionales (country=CO) ---
+        const docType = sanitize(body["docType"], 15).toUpperCase();
+        const docNumber = sanitize(body["docNumber"], 40);
+        const department = sanitize(body["department"], 60);
+
+        // --- Campos obligatorios SOLO para pedidos internacionales (country=INTL) ---
+        const idNumber = sanitize(body["idNumber"], 40); // documento fiscal / DNI / pasaporte
+        const postalCode = sanitize(body["postalCode"], 20);
+        const state = sanitize(body["state"], 60);
+        const destinationCountry = sanitize(body["destinationCountry"], 60);
 
         // Único dato de "categoría de precio" que decide el cliente: solo
         // hay dos casos válidos, nacional o internacional. Esto NO permite
@@ -84,6 +96,30 @@ export const Route = createFileRoute("/api/checkout")({
         }
         if (!name || !phone || !city || !address) {
           return jsonResponse({ error: "Faltan datos de envío." }, 400);
+        }
+
+        // Cada categoría tiene su propio conjunto de campos obligatorios,
+        // exactamente los que pide el negocio — sin excepciones.
+        if (isNational) {
+          if (!VALID_DOC_TYPES.includes(docType as (typeof VALID_DOC_TYPES)[number]) || !docNumber || !department) {
+            return jsonResponse(
+              {
+                error:
+                  "Para compras nacionales faltan datos: tipo/número de documento de identidad o departamento.",
+              },
+              400,
+            );
+          }
+        } else {
+          if (!idNumber || !email || !postalCode || !state || !destinationCountry) {
+            return jsonResponse(
+              {
+                error:
+                  "Para compras internacionales faltan datos: documento de identificación, correo, código postal, estado/provincia o país de destino.",
+              },
+              400,
+            );
+          }
         }
 
         // Credenciales de Wompi. La pasarela internacional es LA MISMA
@@ -232,6 +268,15 @@ export const Route = createFileRoute("/api/checkout")({
             customer_email: email || null,
             shipping_city: city,
             shipping_address: address,
+            // Nacional: documento de identidad + departamento.
+            doc_type: isNational ? docType : null,
+            doc_number: isNational ? docNumber : null,
+            shipping_department: isNational ? department : null,
+            // Internacional: documento/pasaporte + dirección internacional.
+            id_number: isNational ? null : idNumber,
+            postal_code: isNational ? null : postalCode,
+            state: isNational ? null : state,
+            destination_country: isNational ? null : destinationCountry,
           })
           .select("id, reference")
           .single();

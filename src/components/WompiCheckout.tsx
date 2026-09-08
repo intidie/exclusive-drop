@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   CONTACT,
+  DESTINATION_COUNTRIES,
+  DOC_TYPES,
   FREE_SHIPPING_THRESHOLD_COP,
   PRICE,
   PRODUCTS,
@@ -54,8 +56,31 @@ type Draft = {
   // "" significa que el usuario todavía no ha elegido: no asumimos un país
   // por defecto, porque de eso depende la moneda y el monto que se cobra.
   country: CountryCode | "";
+  // Obligatorios SOLO para pedidos nacionales (country === "CO").
+  docType: "" | "CC" | "NIT" | "CE" | "PASAPORTE" | "OTRO";
+  docNumber: string;
+  department: string;
+  // Obligatorios SOLO para pedidos internacionales (country === "INTL").
+  idNumber: string;
+  postalCode: string;
+  state: string;
+  destinationCountry: string;
 };
-const EMPTY_DRAFT: Draft = { name: "", phone: "", email: "", city: "", address: "", country: "" };
+const EMPTY_DRAFT: Draft = {
+  name: "",
+  phone: "",
+  email: "",
+  city: "",
+  address: "",
+  country: "",
+  docType: "",
+  docNumber: "",
+  department: "",
+  idNumber: "",
+  postalCode: "",
+  state: "",
+  destinationCountry: "",
+};
 
 function loadDraft(): Draft {
   if (typeof window === "undefined") return EMPTY_DRAFT;
@@ -122,12 +147,33 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
   const isInternational = draft.country === "INTL";
   const missingForFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD_COP - estimatedSubtotalCop);
 
+  // El <select> de país de destino muestra la lista conocida; si el valor
+  // guardado no está en la lista (o está vacío), se interpreta como "Otro
+  // país" y se revela un campo de texto libre para escribirlo.
+  const knownCountryNames = DESTINATION_COUNTRIES.map((c) => c.name).filter((n) => n !== "Otro país");
+  const isKnownDestination = knownCountryNames.includes(draft.destinationCountry);
+  const destinationSelectValue = draft.destinationCountry === "" ? "" : isKnownDestination ? draft.destinationCountry : "Otro país";
+  const showOtherDestinationInput = destinationSelectValue === "Otro país";
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
 
     if (!draft.country) {
       setError("Selecciona si tu compra es nacional (Colombia) o internacional.");
+      return;
+    }
+    if (draft.country === "CO" && (!draft.docType || !draft.docNumber || !draft.department)) {
+      setError("Faltan datos: tipo/número de documento de identidad o departamento.");
+      return;
+    }
+    if (
+      draft.country === "INTL" &&
+      (!draft.idNumber || !draft.email || !draft.postalCode || !draft.state || !draft.destinationCountry)
+    ) {
+      setError(
+        "Para compras internacionales faltan datos: documento de identificación, correo, código postal, estado/provincia o país de destino.",
+      );
       return;
     }
 
@@ -151,6 +197,13 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
           city: draft.city,
           address: draft.address,
           country: draft.country,
+          docType: draft.docType,
+          docNumber: draft.docNumber,
+          department: draft.department,
+          idNumber: draft.idNumber,
+          postalCode: draft.postalCode,
+          state: draft.state,
+          destinationCountry: draft.destinationCountry,
         }),
       });
 
@@ -321,41 +374,168 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                     onChange={(e) => updateDraft({ name: e.target.value })}
                     required
                     maxLength={80}
-                    placeholder="Nombre completo"
+                    placeholder="Nombre completo o razón social"
                     className={field}
                   />
+
+                  {isNational && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <select
+                        value={draft.docType}
+                        onChange={(e) => updateDraft({ docType: e.target.value as Draft["docType"] })}
+                        required
+                        className={`${field} ${draft.docType === "" ? "text-white/35" : ""}`}
+                      >
+                        <option value="" disabled>
+                          Tipo de documento
+                        </option>
+                        {DOC_TYPES.map((d) => (
+                          <option key={d.value} value={d.value} className="bg-black">
+                            {d.label}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        value={draft.docNumber}
+                        onChange={(e) => updateDraft({ docNumber: e.target.value })}
+                        required
+                        maxLength={40}
+                        placeholder="Número de documento"
+                        className={field}
+                      />
+                    </div>
+                  )}
+
+                  {isInternational && (
+                    <input
+                      value={draft.idNumber}
+                      onChange={(e) => updateDraft({ idNumber: e.target.value })}
+                      required
+                      maxLength={40}
+                      placeholder="Documento de identificación / pasaporte del destinatario"
+                      className={field}
+                    />
+                  )}
+
                   <input
                     value={draft.phone}
                     onChange={(e) => updateDraft({ phone: e.target.value })}
                     required
-                    maxLength={25}
-                    placeholder="Teléfono"
+                    maxLength={30}
+                    placeholder={
+                      isInternational
+                        ? "Teléfono de contacto (del país de destino, con código)"
+                        : "Teléfono celular o fijo"
+                    }
                     className={field}
                   />
-                  <input
-                    value={draft.email}
-                    onChange={(e) => updateDraft({ email: e.target.value })}
-                    type="email"
-                    maxLength={120}
-                    placeholder="Correo (opcional)"
-                    className={field}
-                  />
-                  <input
-                    value={draft.city}
-                    onChange={(e) => updateDraft({ city: e.target.value })}
-                    required
-                    maxLength={60}
-                    placeholder={isInternational ? "Ciudad / país" : "Ciudad"}
-                    className={field}
-                  />
+
+                  {isInternational && (
+                    <input
+                      value={draft.email}
+                      onChange={(e) => updateDraft({ email: e.target.value })}
+                      type="email"
+                      required
+                      maxLength={120}
+                      placeholder="Correo electrónico"
+                      className={field}
+                    />
+                  )}
+
                   <input
                     value={draft.address}
                     onChange={(e) => updateDraft({ address: e.target.value })}
                     required
-                    maxLength={160}
-                    placeholder="Dirección de envío"
+                    maxLength={200}
+                    placeholder={
+                      isInternational
+                        ? "Dirección exacta detallada"
+                        : "Dirección exacta (incluye barrio o indicaciones)"
+                    }
                     className={field}
                   />
+
+                  {isNational && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        value={draft.city}
+                        onChange={(e) => updateDraft({ city: e.target.value })}
+                        required
+                        maxLength={60}
+                        placeholder="Ciudad"
+                        className={field}
+                      />
+                      <input
+                        value={draft.department}
+                        onChange={(e) => updateDraft({ department: e.target.value })}
+                        required
+                        maxLength={60}
+                        placeholder="Departamento"
+                        className={field}
+                      />
+                    </div>
+                  )}
+
+                  {isInternational && (
+                    <>
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          value={draft.postalCode}
+                          onChange={(e) => updateDraft({ postalCode: e.target.value })}
+                          required
+                          maxLength={20}
+                          placeholder="Código postal (Zip Code)"
+                          className={field}
+                        />
+                        <input
+                          value={draft.city}
+                          onChange={(e) => updateDraft({ city: e.target.value })}
+                          required
+                          maxLength={60}
+                          placeholder="Ciudad"
+                          className={field}
+                        />
+                      </div>
+                      <input
+                        value={draft.state}
+                        onChange={(e) => updateDraft({ state: e.target.value })}
+                        required
+                        maxLength={60}
+                        placeholder="Estado / provincia"
+                        className={field}
+                      />
+                      <select
+                        value={destinationSelectValue}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          updateDraft({ destinationCountry: value === "Otro país" ? "" : value });
+                        }}
+                        required
+                        className={`${field} ${destinationSelectValue === "" ? "text-white/35" : ""}`}
+                      >
+                        <option value="" disabled>
+                          País de destino
+                        </option>
+                        {DESTINATION_COUNTRIES.map((c) => (
+                          <option key={c.name} value={c.name} className="bg-black">
+                            {c.name}
+                            {c.dial ? ` (${c.dial})` : ""}
+                          </option>
+                        ))}
+                      </select>
+                      {showOtherDestinationInput && (
+                        <input
+                          value={draft.destinationCountry}
+                          onChange={(e) => updateDraft({ destinationCountry: e.target.value })}
+                          required
+                          maxLength={60}
+                          placeholder="Escribe tu país de destino"
+                          className={field}
+                        />
+                      )}
+                    </>
+                  )}
+
                   {error && <p className="text-xs text-red-400">{error}</p>}
                   <button
                     type="submit"
