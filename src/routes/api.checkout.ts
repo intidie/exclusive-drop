@@ -32,6 +32,41 @@ async function sha256Hex(input: string): Promise<string> {
     .join("");
 }
 
+// Verifica el token de Cloudflare Turnstile contra el endpoint oficial.
+// SIEMPRE del lado del servidor — el widget del frontend por sí solo no
+// bloquea nada, cualquiera podría llamar a este endpoint directo sin pasar
+// por el navegador. El secret NUNCA debe exponerse al cliente (no usar
+// prefijo VITE_).
+async function verifyTurnstile(token: string, remoteIp: string | null): Promise<boolean> {
+  const secret = process.env["TURNSTILE_SECRET_KEY"]?.trim();
+  if (!secret) {
+    console.error("[checkout] Falta TURNSTILE_SECRET_KEY.");
+    return false;
+  }
+  if (!token) return false;
+
+  const form = new URLSearchParams();
+  form.set("secret", secret);
+  form.set("response", token);
+  if (remoteIp) form.set("remoteip", remoteIp);
+
+  try {
+    const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: form,
+    });
+    const data = (await res.json()) as { success?: boolean; ["error-codes"]?: string[] };
+    if (!data.success) {
+      console.warn("[checkout] Turnstile rechazado:", data["error-codes"]);
+    }
+    return data.success === true;
+  } catch (err) {
+    console.error("[checkout] Error verificando Turnstile:", err);
+    return false;
+  }
+}
+
 type CartLine = { slug: string; size: string; qty: number };
 
 export const Route = createFileRoute("/api/checkout")({
@@ -57,6 +92,23 @@ export const Route = createFileRoute("/api/checkout")({
             };
           })
           .filter((it) => it.slug && VALID_SIZES.includes(it.size));
+
+        // Verificación anti-bot: PRIMERO Turnstile, antes de leer Supabase o
+        // reservar stock. Así una petición automatizada sin token válido se
+        // rechaza de inmediato, sin gastar ni una sola consulta a la base de
+        // datos ni a Wompi.
+        const turnstileToken = sanitize(body["turnstileToken"], 2000);
+        const remoteIp =
+          request.headers.get("cf-connecting-ip") ??
+          request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+          null;
+        const turnstileOk = await verifyTurnstile(turnstileToken, remoteIp);
+        if (!turnstileOk) {
+          return jsonResponse(
+            { error: "No pudimos verificar que eres una persona real. Intenta de nuevo." },
+            403,
+          );
+        }
 
         const name = sanitize(body["name"], 80);
         const phone = sanitize(body["phone"], 30);

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   CONTACT,
@@ -27,6 +27,11 @@ type Phase = "form" | "sent";
 declare global {
   interface Window {
     WidgetCheckout?: new (opts: Record<string, unknown>) => { open: (cb: (r: unknown) => void) => void };
+    turnstile?: {
+      render: (container: string | HTMLElement, options: Record<string, unknown>) => string;
+      reset: (widgetId?: string) => void;
+      remove: (widgetId?: string) => void;
+    };
   }
 }
 
@@ -39,6 +44,20 @@ function loadWidget(): Promise<void> {
     s.async = true;
     s.onload = () => resolve();
     s.onerror = () => reject(new Error("No pudimos cargar el checkout de Wompi."));
+    document.head.appendChild(s);
+  });
+}
+
+function loadTurnstile(): Promise<void> {
+  if (typeof window === "undefined") return Promise.resolve();
+  if (window.turnstile) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+    s.async = true;
+    s.defer = true;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error("No pudimos cargar la verificación anti-bots."));
     document.head.appendChild(s);
   });
 }
@@ -116,6 +135,9 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
   const [busy, setBusy] = useState(false);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [totals, setTotals] = useState<{ total: number; currency: "COP" | "USD" } | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string>("");
+  const turnstileContainerRef = useRef<HTMLDivElement>(null);
+  const turnstileWidgetIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (open) setDraft(loadDraft());
@@ -127,7 +149,41 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
       setError(null);
       setBusy(false);
       setTotals(null);
+      setTurnstileToken("");
+      return;
     }
+
+    // Renderizar el widget en modo EXPLÍCITO (no automático por
+    // data-sitekey) para controlar exactamente cuándo se resetea: si el
+    // pago falla o el checkout es rechazado, un token ya usado/vencido no
+    // sirve para un segundo intento.
+    let cancelled = false;
+    const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined;
+    if (!siteKey) {
+      console.error("Falta VITE_TURNSTILE_SITE_KEY.");
+      return;
+    }
+
+    loadTurnstile()
+      .then(() => {
+        if (cancelled || !window.turnstile || !turnstileContainerRef.current) return;
+        turnstileWidgetIdRef.current = window.turnstile.render(turnstileContainerRef.current, {
+          sitekey: siteKey,
+          theme: "dark",
+          callback: (token: string) => setTurnstileToken(token),
+          "expired-callback": () => setTurnstileToken(""),
+          "error-callback": () => setTurnstileToken(""),
+        });
+      })
+      .catch((err) => console.error(err));
+
+    return () => {
+      cancelled = true;
+      if (window.turnstile && turnstileWidgetIdRef.current) {
+        window.turnstile.remove(turnstileWidgetIdRef.current);
+        turnstileWidgetIdRef.current = null;
+      }
+    };
   }, [open]);
 
   function updateDraft(patch: Partial<Draft>) {
@@ -176,6 +232,10 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
       );
       return;
     }
+    if (!turnstileToken) {
+      setError("Completa la verificación de seguridad antes de continuar.");
+      return;
+    }
 
     setBusy(true);
 
@@ -204,6 +264,7 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
           postalCode: draft.postalCode,
           state: draft.state,
           destinationCountry: draft.destinationCountry,
+          turnstileToken,
         }),
       });
 
@@ -249,6 +310,13 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "No pudimos iniciar el pago.");
+      // El token es de un solo uso: si algo falló, hay que resetear el
+      // widget para que el usuario pueda obtener uno nuevo antes de
+      // reintentar.
+      setTurnstileToken("");
+      if (window.turnstile && turnstileWidgetIdRef.current) {
+        window.turnstile.reset(turnstileWidgetIdRef.current);
+      }
     } finally {
       setBusy(false);
     }
@@ -537,9 +605,16 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                   )}
 
                   {error && <p className="text-xs text-red-400">{error}</p>}
+
+                  {/* Verificación anti-bots. El div queda vacío hasta que
+                      Cloudflare inyecta el widget (ver useEffect de arriba).
+                      El backend SIEMPRE revalida este token — este widget
+                      por sí solo no bloquea nada. */}
+                  <div ref={turnstileContainerRef} className="flex justify-center py-1" />
+
                   <button
                     type="submit"
-                    disabled={busy || items.length === 0}
+                    disabled={busy || items.length === 0 || !turnstileToken}
                     className="group w-full h-16 flex flex-col items-center justify-center gap-1 bg-white text-black border border-white hover:bg-transparent hover:text-white transition-colors disabled:opacity-40"
                   >
                     {busy ? (
