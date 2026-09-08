@@ -24,9 +24,14 @@ export type Database = {
           customer_email: string | null
           customer_name: string | null
           customer_phone: string | null
+          destination_country: string | null
+          doc_number: string | null
+          doc_type: string | null
           fx_rate_used: number | null
           id: string
+          id_number: string | null
           items: Json
+          postal_code: string | null
           product_name: string | null
           product_slug: string | null
           reference: string
@@ -35,6 +40,7 @@ export type Database = {
           shipping_cop: number
           shipping_department: string | null
           size: string | null
+          state: string | null
           status: Database["public"]["Enums"]["order_status"]
           subtotal_cop: number
           updated_at: string
@@ -50,9 +56,14 @@ export type Database = {
           customer_email?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          destination_country?: string | null
+          doc_number?: string | null
+          doc_type?: string | null
           fx_rate_used?: number | null
           id?: string
+          id_number?: string | null
           items?: Json
+          postal_code?: string | null
           product_name?: string | null
           product_slug?: string | null
           reference: string
@@ -61,6 +72,7 @@ export type Database = {
           shipping_cop?: number
           shipping_department?: string | null
           size?: string | null
+          state?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           subtotal_cop?: number
           updated_at?: string
@@ -76,9 +88,14 @@ export type Database = {
           customer_email?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          destination_country?: string | null
+          doc_number?: string | null
+          doc_type?: string | null
           fx_rate_used?: number | null
           id?: string
+          id_number?: string | null
           items?: Json
+          postal_code?: string | null
           product_name?: string | null
           product_slug?: string | null
           reference?: string
@@ -87,6 +104,7 @@ export type Database = {
           shipping_cop?: number
           shipping_department?: string | null
           size?: string | null
+          state?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           subtotal_cop?: number
           updated_at?: string
@@ -178,6 +196,33 @@ export type Database = {
           department?: string
           id?: string
           shipping_cop?: number
+        }
+        Relationships: []
+      }
+      site_visits: {
+        Row: {
+          created_at: string
+          id: string
+          path: string | null
+          referrer: string | null
+          source: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          path?: string | null
+          referrer?: string | null
+          source?: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          path?: string | null
+          referrer?: string | null
+          source?: string
+          user_agent?: string | null
         }
         Relationships: []
       }
