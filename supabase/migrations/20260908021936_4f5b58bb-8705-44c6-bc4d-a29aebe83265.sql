@@ -1,0 +1,2 @@
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS country TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS fx_rate_used NUMERIC;
