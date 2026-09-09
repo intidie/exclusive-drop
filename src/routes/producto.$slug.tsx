@@ -9,8 +9,6 @@ import { useDisplayCurrency } from "@/lib/use-currency";
 
 const formatCOP = (n: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
-const formatUSD = (n: number) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 
 export const Route = createFileRoute("/producto/$slug")({
   loader: ({ params }) => {
