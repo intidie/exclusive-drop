@@ -4,6 +4,7 @@ import { getProduct, PRODUCTS, PRICE, ORIGINAL_PRICE, USD_TRM, SIZES, CONTACT, P
 import CountdownTimer from "@/components/CountdownTimer";
 import SizeGuideModal from "@/components/SizeGuideModal";
 import { useCart } from "@/lib/cart-context";
+import { useDisplayCurrency } from "@/lib/use-currency";
 
 
 const formatCOP = (n: number) =>
