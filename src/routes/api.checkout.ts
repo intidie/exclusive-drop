@@ -8,6 +8,14 @@ import type {} from "@tanstack/react-start";
 // frontend; el monto real que se cobra siempre sale de aquí).
 const USD_TRM = 4000;
 
+// Interruptor de pagos internacionales. Wompi rechaza USD hasta que se
+// habilite la moneda en el panel de comercios (Configuración > Monedas
+// aceptadas). Mientras WOMPI_INTL_ENABLED no sea exactamente "true", el
+// checkout rechaza cualquier intento de compra internacional ANTES de
+// reservar stock o llamar a Wompi, para no repetir el error de "moneda no
+// aceptada" ni dejar pedidos huérfanos con stock reservado.
+const WOMPI_INTL_ENABLED = process.env["WOMPI_INTL_ENABLED"] === "true";
+
 const VALID_SIZES = ["S", "M", "L", "XL", "XXL"];
 const VALID_COUNTRIES = ["CO", "INTL"] as const;
 type CountryCode = (typeof VALID_COUNTRIES)[number];
@@ -142,6 +150,21 @@ export const Route = createFileRoute("/api/checkout")({
         const country = rawCountry as CountryCode;
         const isNational = country === "CO";
         const currency = isNational ? "COP" : "USD";
+
+        // Wompi todavía no tiene USD habilitado en el panel de comercios:
+        // cortamos aquí, ANTES de reservar stock o crear el pedido, para no
+        // dejar reservas huérfanas como pasó el 8-9 de septiembre (2 pedidos
+        // "pending" en USD que nunca llegaron a Wompi y se quedaron con
+        // stock reservado indefinidamente).
+        if (!isNational && !WOMPI_INTL_ENABLED) {
+          return jsonResponse(
+            {
+              error:
+                "Los pagos internacionales están temporalmente deshabilitados. Escríbenos por Instagram para coordinar tu compra mientras lo habilitamos.",
+            },
+            503,
+          );
+        }
 
         if (cart.length === 0) {
           return jsonResponse({ error: "El carrito está vacío o es inválido." }, 400);

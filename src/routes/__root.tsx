@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { CartProvider } from "../lib/cart-context";
 import CartDrawer, { CartButton } from "../components/CartDrawer";
+import { useBioLinkTracking } from "../hooks/use-bio-link-tracking";
 
 function NotFoundComponent() {
   return (
@@ -124,6 +125,10 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  // Si se entró por el link de la bio de Instagram (ej. ?ig=1), registra la
+  // visita en Supabase y limpia la URL para que quede solo el dominio.
+  useBioLinkTracking();
 
   return (
     <QueryClientProvider client={queryClient}>

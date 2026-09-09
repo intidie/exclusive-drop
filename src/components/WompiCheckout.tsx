@@ -35,6 +35,13 @@ declare global {
   }
 }
 
+// Pagos internacionales (USD) están apagados hasta que se habilite la
+// moneda en el panel de comercios de Wompi (Configuración > Monedas
+// aceptadas). Mientras VITE_WOMPI_INTL_ENABLED no sea exactamente "true",
+// la opción "Internacional (USD)" queda deshabilitada en la UI — el
+// servidor (api/checkout) aplica el mismo corte de forma independiente.
+const INTL_ENABLED = (import.meta.env.VITE_WOMPI_INTL_ENABLED as string | undefined) === "true";
+
 function loadWidget(): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
   if (window.WidgetCheckout) return Promise.resolve();
@@ -142,6 +149,19 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
   useEffect(() => {
     if (open) setDraft(loadDraft());
   }, [open]);
+
+  // Si quedó un borrador viejo guardado con country === "INTL" de antes de
+  // apagar los pagos internacionales, lo reseteamos para no dejar al
+  // usuario atascado en una opción deshabilitada.
+  useEffect(() => {
+    if (!INTL_ENABLED && draft.country === "INTL") {
+      setDraft((prev) => {
+        const next = { ...prev, country: "" as const };
+        saveDraft(next);
+        return next;
+      });
+    }
+  }, [draft.country]);
 
   useEffect(() => {
     if (!open) {
@@ -373,7 +393,9 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                   {/* Selección obligatoria de categoría de precio. Solo hay
                       dos casos: nacional (Colombia, COP) o internacional
                       (USD, precio fijo con TRM de negocio). No hay un valor
-                      preseleccionado a propósito. */}
+                      preseleccionado a propósito. La opción internacional
+                      queda deshabilitada mientras INTL_ENABLED sea false
+                      (Wompi no tiene USD habilitado todavía). */}
                   <div>
                     <p className="text-[10px] tracking-[0.2em] uppercase text-white/55 mb-2">
                       ¿Dónde recibes tu pedido?
@@ -393,17 +415,25 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                       </button>
                       <button
                         type="button"
-                        onClick={() => updateDraft({ country: "INTL" })}
+                        onClick={() => INTL_ENABLED && updateDraft({ country: "INTL" })}
+                        disabled={!INTL_ENABLED}
                         aria-pressed={isInternational}
+                        aria-disabled={!INTL_ENABLED}
                         className={`border px-3 py-3 text-xs tracking-[0.1em] uppercase transition-colors ${
                           isInternational
                             ? "bg-white text-black border-white"
                             : "border-white/25 hover:border-white/60"
-                        }`}
+                        } ${!INTL_ENABLED ? "opacity-40 cursor-not-allowed hover:border-white/25" : ""}`}
                       >
                         Internacional (USD)
                       </button>
                     </div>
+                    {!INTL_ENABLED && (
+                      <p className="text-[10px] text-white/45 mt-2">
+                        Pagos internacionales disponibles muy pronto. Mientras tanto, escríbenos por
+                        Instagram ({CONTACT.instagramHandle}) para coordinar tu compra.
+                      </p>
+                    )}
                   </div>
 
                   {isNational && (
