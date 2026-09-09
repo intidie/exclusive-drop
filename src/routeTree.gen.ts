@@ -17,6 +17,7 @@ import { Route as ProductoSlugRouteImport } from './routes/producto.$slug'
 import { Route as ApiWompiWebhookRouteImport } from './routes/api.wompi-webhook'
 import { Route as ApiTrackVisitRouteImport } from './routes/api.track-visit'
 import { Route as ApiGeoRouteImport } from './routes/api.geo'
+import { Route as ApiFxRouteImport } from './routes/api.fx'
 import { Route as ApiCheckoutRouteImport } from './routes/api.checkout'
 
 const TerminosRoute = TerminosRouteImport.update({
@@ -59,6 +60,11 @@ const ApiGeoRoute = ApiGeoRouteImport.update({
   path: '/api/geo',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiFxRoute = ApiFxRouteImport.update({
+  id: '/api/fx',
+  path: '/api/fx',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCheckoutRoute = ApiCheckoutRouteImport.update({
   id: '/api/checkout',
   path: '/api/checkout',
@@ -71,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terminos': typeof TerminosRoute
   '/api/checkout': typeof ApiCheckoutRoute
+  '/api/fx': typeof ApiFxRoute
   '/api/geo': typeof ApiGeoRoute
   '/api/track-visit': typeof ApiTrackVisitRoute
   '/api/wompi-webhook': typeof ApiWompiWebhookRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terminos': typeof TerminosRoute
   '/api/checkout': typeof ApiCheckoutRoute
+  '/api/fx': typeof ApiFxRoute
   '/api/geo': typeof ApiGeoRoute
   '/api/track-visit': typeof ApiTrackVisitRoute
   '/api/wompi-webhook': typeof ApiWompiWebhookRoute
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terminos': typeof TerminosRoute
   '/api/checkout': typeof ApiCheckoutRoute
+  '/api/fx': typeof ApiFxRoute
   '/api/geo': typeof ApiGeoRoute
   '/api/track-visit': typeof ApiTrackVisitRoute
   '/api/wompi-webhook': typeof ApiWompiWebhookRoute
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terminos'
     | '/api/checkout'
+    | '/api/fx'
     | '/api/geo'
     | '/api/track-visit'
     | '/api/wompi-webhook'
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terminos'
     | '/api/checkout'
+    | '/api/fx'
     | '/api/geo'
     | '/api/track-visit'
     | '/api/wompi-webhook'
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terminos'
     | '/api/checkout'
+    | '/api/fx'
     | '/api/geo'
     | '/api/track-visit'
     | '/api/wompi-webhook'
@@ -141,6 +153,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TerminosRoute: typeof TerminosRoute
   ApiCheckoutRoute: typeof ApiCheckoutRoute
+  ApiFxRoute: typeof ApiFxRoute
   ApiGeoRoute: typeof ApiGeoRoute
   ApiTrackVisitRoute: typeof ApiTrackVisitRoute
   ApiWompiWebhookRoute: typeof ApiWompiWebhookRoute
@@ -205,6 +218,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGeoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/fx': {
+      id: '/api/fx'
+      path: '/api/fx'
+      fullPath: '/api/fx'
+      preLoaderRoute: typeof ApiFxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/checkout': {
       id: '/api/checkout'
       path: '/api/checkout'
@@ -221,6 +241,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TerminosRoute: TerminosRoute,
   ApiCheckoutRoute: ApiCheckoutRoute,
+  ApiFxRoute: ApiFxRoute,
   ApiGeoRoute: ApiGeoRoute,
   ApiTrackVisitRoute: ApiTrackVisitRoute,
   ApiWompiWebhookRoute: ApiWompiWebhookRoute,
