@@ -63,10 +63,10 @@ export const Route = createFileRoute("/api/wompi-webhook")({
 
         // 1) Verificar el checksum firmado por Wompi con nuestro secreto de
         //    eventos: así confirmamos que el evento vino realmente de Wompi.
-        //    Este mismo secreto de eventos sirve tanto para transacciones
-        //    nacionales (COP) como internacionales (USD): Wompi firma el
-        //    evento completo, incluyendo currency, así que un evento
-        //    reindexado a otra moneda no pasaría la verificación.
+        //    Wompi firma el evento completo, incluyendo currency, así que
+        //    un evento con un monto o moneda distintos no pasaría la
+        //    verificación. Todas las transacciones (nacionales e
+        //    internacionales) se cobran en COP.
         const concatenated =
           signature.properties.map((p) => String(getByPath(payload, p) ?? "")).join("") +
           String(timestamp) +
@@ -94,8 +94,8 @@ export const Route = createFileRoute("/api/wompi-webhook")({
 
         // 2) Defensa adicional: el monto Y LA MONEDA reportados por Wompi
         //    deben coincidir exactamente con lo que nosotros calculamos y
-        //    guardamos al crear el pedido (nacional=COP, internacional=USD
-        //    con TRM fija). Si algo no coincide, no se aprueba el pedido.
+        //    guardamos al crear el pedido (siempre en COP). Si algo no
+        //    coincide, no se aprueba el pedido.
         const { data: order, error: fetchError } = await supabaseAdmin
           .from("orders")
           .select("id, amount_in_cents, currency, status, items")

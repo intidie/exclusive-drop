@@ -14,7 +14,7 @@ const METHODS = [
   { tag: "Wompi", title: "Nequi", desc: "Aprueba el pago desde tu app Nequi en segundos." },
   { tag: "Wompi", title: "Botón Bancolombia", desc: "Paga con tu cuenta de ahorros o corriente Bancolombia." },
   { tag: "Wompi", title: "Corresponsales y efectivo", desc: "Genera tu recibo y paga en efectivo en los puntos habilitados por Wompi." },
-  { tag: "Internacional", title: "Tarjetas internacionales (USD)", desc: "Si compras desde fuera de Colombia, pagas en dólares a un precio fijo, con la misma pasarela de Wompi." },
+  { tag: "Internacional", title: "Tarjetas internacionales", desc: "Si compras desde fuera de Colombia, el cobro se hace en pesos colombianos (COP) con la misma pasarela de Wompi; tu banco hace la conversión a tu moneda." },
 ];
 
 export default function CheckoutSection() {
@@ -26,8 +26,8 @@ export default function CheckoutSection() {
           <h2 className="text-4xl md:text-6xl font-display tracking-wide">Paga seguro con Wompi.</h2>
           <p className="mt-4 text-sm md:text-base text-white/60 max-w-2xl">
             Todos los pagos se procesan a través de la pasarela Wompi: tarjeta, PSE, Nequi, botón
-            Bancolombia y efectivo en corresponsales para Colombia; tarjeta internacional en
-            dólares si compras desde fuera del país.
+            Bancolombia y efectivo en corresponsales para Colombia; tarjeta internacional si compras
+            desde fuera del país (el cobro siempre es en pesos colombianos, tu banco hace la conversión).
           </p>
           <p className="mt-2 text-sm text-white/50 max-w-2xl">
             Talla XXL tiene un recargo de $15.000. Envío nacional gratis en compras superiores a
@@ -50,9 +50,10 @@ export default function CheckoutSection() {
             Envíos internacionales
           </h3>
           <p className="mt-3 text-sm text-white/60">
-            Ya puedes pagar en dólares desde fuera de Colombia. El costo y tiempo de envío
-            internacional se coordina directamente contigo por Instagram una vez registrado el
-            pedido.
+            Ya puedes comprar desde fuera de Colombia: el cobro se hace en pesos colombianos (COP)
+            con la misma pasarela de Wompi, y tu banco hace la conversión a tu moneda. El costo y
+            tiempo de envío internacional se coordina directamente contigo por Instagram una vez
+            registrado el pedido.
           </p>
         </motion.div>
 

@@ -12,7 +12,7 @@ export const Route = createFileRoute("/pagos")({
           "Pagos seguros con Wompi: tarjeta, PSE, Nequi y Bancolombia. Envíos nacionales en Colombia.",
       },
       { property: "og:title", content: "Métodos de pago y envíos — INTI(t)" },
-      { property: "og:description", content: "Pago seguro con Wompi. Envíos nacionales; próximamente internacionales." },
+      { property: "og:description", content: "Pago seguro con Wompi. Envíos nacionales e internacionales." },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "/pagos" },
       { name: "twitter:card", content: "summary" },

@@ -73,7 +73,10 @@ type Draft = {
   city: string;
   address: string;
   // "" significa que el usuario todavía no ha elegido: no asumimos un país
-  // por defecto, porque de eso depende qué datos de envío se piden.
+  // por defecto a mano, porque de eso depende qué datos de envío se piden.
+  // (Sí se preselecciona automáticamente por IP — ver el efecto de
+  // geolocalización más abajo — pero eso cuenta como "elegido" igual, y el
+  // usuario puede cambiarlo cuando quiera.)
   country: CountryCode | "";
   // Obligatorios SOLO para pedidos nacionales (country === "CO").
   docType: "" | "CC" | "NIT" | "CE" | "PASAPORTE" | "OTRO";
@@ -143,6 +146,30 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
   useEffect(() => {
     if (open) setDraft(loadDraft());
   }, [open]);
+
+  // Preselecciona "Colombia" o "Internacional" según el país detectado por
+  // IP (ver src/routes/api.geo.ts) — SOLO si el usuario todavía no ha
+  // elegido nada (ni ahora ni en un borrador guardado). Nunca sobreescribe
+  // una elección ya hecha, y si la detección falla, tarda o no está
+  // disponible (ej. en desarrollo local), el usuario simplemente elige
+  // manualmente como antes — esto es pura comodidad de UX, nunca bloquea
+  // el flujo de pago.
+  useEffect(() => {
+    if (!open || draft.country !== "") return;
+    let cancelled = false;
+    fetch("/api/geo")
+      .then((r) => r.json())
+      .then((data: { country?: string | null }) => {
+        if (cancelled || !data?.country) return;
+        updateDraft({ country: data.country === "CO" ? "CO" : "INTL" });
+      })
+      .catch(() => {
+        // Sin detección disponible: el usuario elige manualmente.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, draft.country]);
 
   useEffect(() => {
     if (!open) {
@@ -375,8 +402,9 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                       dos casos: nacional (Colombia) o internacional. El pago
                       SIEMPRE se cobra en pesos colombianos (COP) en ambos
                       casos — lo único que cambia son los datos de envío que
-                      se piden más abajo. No hay un valor preseleccionado a
-                      propósito. */}
+                      se piden más abajo. Se preselecciona por IP (ver el
+                      efecto de geolocalización arriba), pero el usuario
+                      puede cambiarlo libremente. */}
                   <div>
                     <p className="text-[10px] tracking-[0.2em] uppercase text-white/55 mb-2">
                       ¿Dónde recibes tu pedido?

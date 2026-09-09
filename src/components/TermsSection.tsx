@@ -14,11 +14,11 @@ const TERMS = [
   },
   {
     t: "Pagos",
-    d: "Todos los pagos se procesan exclusivamente a través de Wompi: tarjeta débito/crédito, PSE, Nequi, botón Bancolombia y efectivo en corresponsales. No aceptamos otros medios de pago. El monto es calculado y validado en nuestro servidor; nunca manejamos los datos de tu tarjeta.",
+    d: "Todos los pagos se procesan exclusivamente a través de Wompi: tarjeta débito/crédito, PSE, Nequi, botón Bancolombia y efectivo en corresponsales. No aceptamos otros medios de pago. Para compras internacionales, el cobro también se hace en pesos colombianos (COP); la conversión a tu moneda la hace tu banco o tarjeta. El monto es calculado y validado en nuestro servidor; nunca manejamos los datos de tu tarjeta.",
   },
   {
     t: "Envíos",
-    d: "Solo envíos nacionales dentro de Colombia. Cada camisa es realizada a mano, por lo que el despacho se hace 1 semana después de la compra. El envío es gratuito en compras superiores a $250.000; por debajo de ese monto, el costo de envío corre por cuenta del comprador y se coordina aparte (no se cobra a través de Wompi). PRÓXIMAMENTE ENVÍOS INTERNACIONALES.",
+    d: "Envíos nacionales dentro de Colombia y envíos internacionales (costo y tiempo se coordinan aparte por Instagram tras la compra). Cada camisa es realizada a mano, por lo que el despacho se hace 1 semana después de la compra. El envío nacional es gratuito en compras superiores a $250.000; por debajo de ese monto, el costo de envío corre por cuenta del comprador y se coordina aparte (no se cobra a través de Wompi).",
   },
   {
     t: "Cambios y devoluciones",
