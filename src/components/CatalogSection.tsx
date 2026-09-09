@@ -37,6 +37,10 @@ export default function CatalogSection() {
             className="w-full max-w-xs md:max-w-sm h-auto -mt-2 opacity-40 mix-blend-screen animate-decor-drift"
           />
           <p className="micro mt-4 text-white/45">Catálogo · edición única</p>
+          {isInternational && (
+            <p className="micro mt-2 text-white/35">Precios en USD · TRM fija 4.000 COP</p>
+          )}
+
 
         </motion.div>
 
