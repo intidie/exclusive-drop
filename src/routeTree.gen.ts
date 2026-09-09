@@ -15,6 +15,8 @@ import { Route as PagosRouteImport } from './routes/pagos'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductoSlugRouteImport } from './routes/producto.$slug'
 import { Route as ApiWompiWebhookRouteImport } from './routes/api.wompi-webhook'
+import { Route as ApiTrackVisitRouteImport } from './routes/api.track-visit'
+import { Route as ApiGeoRouteImport } from './routes/api.geo'
 import { Route as ApiCheckoutRouteImport } from './routes/api.checkout'
 
 const TerminosRoute = TerminosRouteImport.update({
@@ -47,6 +49,16 @@ const ApiWompiWebhookRoute = ApiWompiWebhookRouteImport.update({
   path: '/api/wompi-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTrackVisitRoute = ApiTrackVisitRouteImport.update({
+  id: '/api/track-visit',
+  path: '/api/track-visit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGeoRoute = ApiGeoRouteImport.update({
+  id: '/api/geo',
+  path: '/api/geo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCheckoutRoute = ApiCheckoutRouteImport.update({
   id: '/api/checkout',
   path: '/api/checkout',
@@ -59,6 +71,8 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terminos': typeof TerminosRoute
   '/api/checkout': typeof ApiCheckoutRoute
+  '/api/geo': typeof ApiGeoRoute
+  '/api/track-visit': typeof ApiTrackVisitRoute
   '/api/wompi-webhook': typeof ApiWompiWebhookRoute
   '/producto/$slug': typeof ProductoSlugRoute
 }
@@ -68,6 +82,8 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terminos': typeof TerminosRoute
   '/api/checkout': typeof ApiCheckoutRoute
+  '/api/geo': typeof ApiGeoRoute
+  '/api/track-visit': typeof ApiTrackVisitRoute
   '/api/wompi-webhook': typeof ApiWompiWebhookRoute
   '/producto/$slug': typeof ProductoSlugRoute
 }
@@ -78,6 +94,8 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terminos': typeof TerminosRoute
   '/api/checkout': typeof ApiCheckoutRoute
+  '/api/geo': typeof ApiGeoRoute
+  '/api/track-visit': typeof ApiTrackVisitRoute
   '/api/wompi-webhook': typeof ApiWompiWebhookRoute
   '/producto/$slug': typeof ProductoSlugRoute
 }
@@ -89,6 +107,8 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terminos'
     | '/api/checkout'
+    | '/api/geo'
+    | '/api/track-visit'
     | '/api/wompi-webhook'
     | '/producto/$slug'
   fileRoutesByTo: FileRoutesByTo
@@ -98,6 +118,8 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terminos'
     | '/api/checkout'
+    | '/api/geo'
+    | '/api/track-visit'
     | '/api/wompi-webhook'
     | '/producto/$slug'
   id:
@@ -107,6 +129,8 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terminos'
     | '/api/checkout'
+    | '/api/geo'
+    | '/api/track-visit'
     | '/api/wompi-webhook'
     | '/producto/$slug'
   fileRoutesById: FileRoutesById
@@ -117,6 +141,8 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TerminosRoute: typeof TerminosRoute
   ApiCheckoutRoute: typeof ApiCheckoutRoute
+  ApiGeoRoute: typeof ApiGeoRoute
+  ApiTrackVisitRoute: typeof ApiTrackVisitRoute
   ApiWompiWebhookRoute: typeof ApiWompiWebhookRoute
   ProductoSlugRoute: typeof ProductoSlugRoute
 }
@@ -165,6 +191,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWompiWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/track-visit': {
+      id: '/api/track-visit'
+      path: '/api/track-visit'
+      fullPath: '/api/track-visit'
+      preLoaderRoute: typeof ApiTrackVisitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/geo': {
+      id: '/api/geo'
+      path: '/api/geo'
+      fullPath: '/api/geo'
+      preLoaderRoute: typeof ApiGeoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/checkout': {
       id: '/api/checkout'
       path: '/api/checkout'
@@ -181,6 +221,8 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TerminosRoute: TerminosRoute,
   ApiCheckoutRoute: ApiCheckoutRoute,
+  ApiGeoRoute: ApiGeoRoute,
+  ApiTrackVisitRoute: ApiTrackVisitRoute,
   ApiWompiWebhookRoute: ApiWompiWebhookRoute,
   ProductoSlugRoute: ProductoSlugRoute,
 }

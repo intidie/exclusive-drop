@@ -1,11 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
 import { PRODUCTS, PRICE } from "@/lib/drop-data";
-
-const formatCOP = (n: number) =>
-  new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
+import { useDisplayCurrency } from "@/lib/use-currency";
 
 export default function CatalogSection() {
+  const { format, formatAlt, isInternational } = useDisplayCurrency();
+
   return (
     <section id="drop" className="relative bg-black text-white pt-10 md:pt-14 pb-24 md:pb-32 px-6 grain scanlines overflow-hidden">
       <div className="max-w-6xl mx-auto relative z-10">
@@ -37,6 +37,10 @@ export default function CatalogSection() {
             className="w-full max-w-xs md:max-w-sm h-auto -mt-2 opacity-40 mix-blend-screen animate-decor-drift"
           />
           <p className="micro mt-4 text-white/45">Catálogo · edición única</p>
+          {isInternational && (
+            <p className="micro mt-2 text-white/35">Precios en USD · TRM fija 4.000 COP</p>
+          )}
+
 
         </motion.div>
 
@@ -66,7 +70,10 @@ export default function CatalogSection() {
                 <p className="micro text-white/40">{p.tag}</p>
                 <h3 className="mt-1 text-lg md:text-2xl font-display tracking-wide leading-none">{p.name}</h3>
                 <div className="mt-2 flex items-center gap-2 flex-wrap">
-                  <p className="text-sm font-mono text-white/70">{formatCOP(p.price ?? PRICE)}</p>
+                  <p className="text-sm font-mono text-white/70">{format(p.price ?? PRICE)}</p>
+                  <p className="text-[11px] font-mono text-white/40">
+                    ≈ {formatAlt(p.price ?? PRICE)}
+                  </p>
                   {p.slug === "machine-girl" && (
                     <span className="text-[9px] tracking-[0.15em] uppercase bg-red-600 text-white px-1.5 py-0.5">
                       Oferta única
