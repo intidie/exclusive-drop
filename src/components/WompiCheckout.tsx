@@ -35,13 +35,6 @@ declare global {
   }
 }
 
-// Pagos internacionales (USD) están apagados hasta que se habilite la
-// moneda en el panel de comercios de Wompi (Configuración > Monedas
-// aceptadas). Mientras VITE_WOMPI_INTL_ENABLED no sea exactamente "true",
-// la opción "Internacional (USD)" queda deshabilitada en la UI — el
-// servidor (api/checkout) aplica el mismo corte de forma independiente.
-const INTL_ENABLED = (import.meta.env.VITE_WOMPI_INTL_ENABLED as string | undefined) === "true";
-
 function loadWidget(): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
   if (window.WidgetCheckout) return Promise.resolve();
@@ -80,7 +73,7 @@ type Draft = {
   city: string;
   address: string;
   // "" significa que el usuario todavía no ha elegido: no asumimos un país
-  // por defecto, porque de eso depende la moneda y el monto que se cobra.
+  // por defecto, porque de eso depende qué datos de envío se piden.
   country: CountryCode | "";
   // Obligatorios SOLO para pedidos nacionales (country === "CO").
   docType: "" | "CC" | "NIT" | "CE" | "PASAPORTE" | "OTRO";
@@ -129,8 +122,9 @@ function saveDraft(draft: Draft) {
 
 // Estimado de precio para la interfaz (barra de envío gratis, vista previa
 // en USD, etc). El monto real que se cobra SIEMPRE lo calcula el servidor
-// con los precios vigentes en Supabase y la TRM fija — esto es solo una
-// vista previa para que el usuario sepa qué esperar antes de pagar.
+// con los precios vigentes en Supabase — esto es solo una vista previa para
+// que el usuario sepa qué esperar antes de pagar. El pago SIEMPRE se hace
+// en pesos colombianos (COP), sea el pedido nacional o internacional.
 function estimateUnitPriceCop(slug: string, size: string) {
   const base = PRODUCTS.find((p) => p.slug === slug)?.price ?? PRICE;
   return base + (size === "XXL" ? XXL_SURCHARGE_COP : 0);
@@ -141,7 +135,7 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
-  const [totals, setTotals] = useState<{ total: number; currency: "COP" | "USD" } | null>(null);
+  const [totalCop, setTotalCop] = useState<number | null>(null);
   const [turnstileToken, setTurnstileToken] = useState<string>("");
   const turnstileContainerRef = useRef<HTMLDivElement>(null);
   const turnstileWidgetIdRef = useRef<string | null>(null);
@@ -150,25 +144,12 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
     if (open) setDraft(loadDraft());
   }, [open]);
 
-  // Si quedó un borrador viejo guardado con country === "INTL" de antes de
-  // apagar los pagos internacionales, lo reseteamos para no dejar al
-  // usuario atascado en una opción deshabilitada.
-  useEffect(() => {
-    if (!INTL_ENABLED && draft.country === "INTL") {
-      setDraft((prev) => {
-        const next = { ...prev, country: "" as const };
-        saveDraft(next);
-        return next;
-      });
-    }
-  }, [draft.country]);
-
   useEffect(() => {
     if (!open) {
       setPhase("form");
       setError(null);
       setBusy(false);
-      setTotals(null);
+      setTotalCop(null);
       setTurnstileToken("");
       return;
     }
@@ -262,10 +243,11 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
     try {
       if (items.length === 0) throw new Error("Tu carrito está vacío.");
 
-      // El precio, la moneda, el stock, la referencia y la firma de
+      // El precio (siempre en COP), el stock, la referencia y la firma de
       // integridad los calcula el servidor (ver src/routes/api.checkout.ts)
       // a partir de "country". El cliente nunca decide cuánto se cobra ni
-      // descuenta el inventario — solo indica a qué categoría pertenece.
+      // descuenta el inventario — solo indica a qué categoría de envío
+      // pertenece.
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -291,11 +273,10 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
       const checkout = (await res.json().catch(() => null)) as {
         reference?: string;
         amountInCents?: number;
-        currency?: "COP" | "USD";
+        currency?: "COP";
         country?: CountryCode;
         publicKey?: string;
         signature?: string;
-        subtotal?: number;
         total?: number;
         error?: string;
       } | null;
@@ -304,8 +285,8 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
         throw new Error(checkout?.error ?? "No pudimos registrar tu pedido.");
       }
 
-      if (checkout.total != null && checkout.currency) {
-        setTotals({ total: checkout.total, currency: checkout.currency });
+      if (checkout.total != null) {
+        setTotalCop(checkout.total);
       }
 
       await loadWidget();
@@ -313,7 +294,7 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
       if (!Widget) throw new Error("No pudimos cargar el checkout de Wompi.");
 
       new Widget({
-        currency: checkout.currency,
+        currency: "COP",
         amountInCents: checkout.amountInCents,
         reference: checkout.reference,
         publicKey: checkout.publicKey,
@@ -390,12 +371,12 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                     ))}
                   </ul>
 
-                  {/* Selección obligatoria de categoría de precio. Solo hay
-                      dos casos: nacional (Colombia, COP) o internacional
-                      (USD, precio fijo con TRM de negocio). No hay un valor
-                      preseleccionado a propósito. La opción internacional
-                      queda deshabilitada mientras INTL_ENABLED sea false
-                      (Wompi no tiene USD habilitado todavía). */}
+                  {/* Selección obligatoria de categoría de envío. Solo hay
+                      dos casos: nacional (Colombia) o internacional. El pago
+                      SIEMPRE se cobra en pesos colombianos (COP) en ambos
+                      casos — lo único que cambia son los datos de envío que
+                      se piden más abajo. No hay un valor preseleccionado a
+                      propósito. */}
                   <div>
                     <p className="text-[10px] tracking-[0.2em] uppercase text-white/55 mb-2">
                       ¿Dónde recibes tu pedido?
@@ -411,29 +392,21 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                             : "border-white/25 hover:border-white/60"
                         }`}
                       >
-                        Colombia (COP)
+                        Colombia
                       </button>
                       <button
                         type="button"
-                        onClick={() => INTL_ENABLED && updateDraft({ country: "INTL" })}
-                        disabled={!INTL_ENABLED}
+                        onClick={() => updateDraft({ country: "INTL" })}
                         aria-pressed={isInternational}
-                        aria-disabled={!INTL_ENABLED}
                         className={`border px-3 py-3 text-xs tracking-[0.1em] uppercase transition-colors ${
                           isInternational
                             ? "bg-white text-black border-white"
                             : "border-white/25 hover:border-white/60"
-                        } ${!INTL_ENABLED ? "opacity-40 cursor-not-allowed hover:border-white/25" : ""}`}
+                        }`}
                       >
-                        Internacional (USD)
+                        Internacional
                       </button>
                     </div>
-                    {!INTL_ENABLED && (
-                      <p className="text-[10px] text-white/45 mt-2">
-                        Pagos internacionales disponibles muy pronto. Mientras tanto, escríbenos por
-                        Instagram ({CONTACT.instagramHandle}) para coordinar tu compra.
-                      </p>
-                    )}
                   </div>
 
                   {isNational && (
@@ -453,11 +426,22 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                   )}
 
                   {isInternational && (
-                    <p className="text-[11px] text-white/60">
-                      Precio fijo estimado: {formatUsd(estimatedSubtotalUsd)}. Los envíos
-                      internacionales se coordinan aparte con nuestro equipo por Instagram después
-                      del pago.
-                    </p>
+                    <div className="text-[11px] text-white/60 space-y-1.5">
+                      <p>
+                        Subtotal estimado: {formatCop(estimatedSubtotalCop)} (≈ {formatUsd(estimatedSubtotalUsd)}{" "}
+                        USD, TRM referencial fija {formatCop(4000)}/USD).
+                      </p>
+                      <p>
+                        El cobro se realiza en pesos colombianos (COP); si tu tarjeta o banco está en
+                        el extranjero, ellos hacen la conversión a tu moneda al momento de pagar. No
+                        somos responsables por la tasa de cambio ni por comisiones que aplique tu
+                        banco.
+                      </p>
+                      <p>
+                        El envío internacional no está incluido en este pago: se cotiza y coordina
+                        aparte con nuestro equipo por Instagram después de la compra.
+                      </p>
+                    </div>
                   )}
 
                   <div className="flex items-center justify-between border-y border-white/10 py-3">
@@ -663,8 +647,9 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                   <WompiVerifiedBadge className="justify-center" />
                   {isInternational ? (
                     <p className="text-[10px] text-white/45 leading-relaxed">
-                      Pago internacional: precio fijo en dólares. Tu camisa se hace a mano y se
-                      despacha 1 semana después de la compra; el envío internacional se coordina
+                      Pago internacional: se cobra en pesos colombianos (COP); tu banco hace la
+                      conversión a tu moneda. Tu camisa se hace a mano y se despacha 1 semana después
+                      de la compra; el envío internacional no está incluido en este pago y se coordina
                       aparte con nuestro equipo.
                     </p>
                   ) : (
@@ -687,14 +672,18 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
               {phase === "sent" && (
                 <div className="space-y-4 py-4">
                   <h3 className="text-3xl font-display tracking-wide">Pedido registrado</h3>
-                  {totals && (
+                  {totalCop != null && (
                     <div className="text-sm text-white/70 space-y-1 border-t border-white/10 pt-3">
                       <div className="flex justify-between font-semibold text-white">
                         <span>Total</span>
-                        <span>
-                          {totals.currency === "USD" ? formatUsd(totals.total) : formatCop(totals.total)}
-                        </span>
+                        <span>{formatCop(totalCop)}</span>
                       </div>
+                      {isInternational && (
+                        <p className="text-[11px] text-white/50">
+                          ≈ {formatUsd(copToUsd(totalCop))} USD (referencial). El monto cobrado por
+                          Wompi es siempre en pesos colombianos; la conversión final la hace tu banco.
+                        </p>
+                      )}
                     </div>
                   )}
                   <p className="text-sm text-white/70">

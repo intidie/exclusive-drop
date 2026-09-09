@@ -1,20 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 
-// TRM fija de negocio para pagos internacionales. NO es la tasa de mercado
-// del día: es un valor fijo que la tienda decide, y solo cambia si se edita
-// este archivo (queda versionado en git). Debe coincidir con USD_TRM en
-// src/lib/drop-data.ts (que solo se usa para el ESTIMADO visual en el
-// frontend; el monto real que se cobra siempre sale de aquí).
+// TRM fija de negocio (NO es la tasa de mercado del día, es un valor fijo
+// que la tienda decide). Wompi solo acepta COP en esta cuenta, así que el
+// monto que se cobra SIEMPRE es en pesos — nacional o internacional da
+// igual. Esta constante sirve únicamente para dejar guardado en el pedido
+// cuál era el estimado en dólares que vio el cliente al pagar (campo
+// informativo `fx_rate_used`); debe coincidir con USD_TRM en
+// src/lib/drop-data.ts, que es la que se usa para mostrar ese estimado en
+// el frontend.
 const USD_TRM = 4000;
-
-// Interruptor de pagos internacionales. Wompi rechaza USD hasta que se
-// habilite la moneda en el panel de comercios (Configuración > Monedas
-// aceptadas). Mientras WOMPI_INTL_ENABLED no sea exactamente "true", el
-// checkout rechaza cualquier intento de compra internacional ANTES de
-// reservar stock o llamar a Wompi, para no repetir el error de "moneda no
-// aceptada" ni dejar pedidos huérfanos con stock reservado.
-const WOMPI_INTL_ENABLED = process.env["WOMPI_INTL_ENABLED"] === "true";
 
 const VALID_SIZES = ["S", "M", "L", "XL", "XXL"];
 const VALID_COUNTRIES = ["CO", "INTL"] as const;
@@ -135,11 +130,12 @@ export const Route = createFileRoute("/api/checkout")({
         const state = sanitize(body["state"], 60);
         const destinationCountry = sanitize(body["destinationCountry"], 60);
 
-        // Único dato de "categoría de precio" que decide el cliente: solo
-        // hay dos casos válidos, nacional o internacional. Esto NO permite
-        // manipular el monto — cada categoría tiene un precio 100% calculado
-        // por el servidor más abajo. No hay valor por defecto silencioso: si
-        // no llega "CO" o "INTL" exactos, se rechaza la solicitud completa.
+        // Único dato de "categoría de envío" que decide el cliente: solo hay
+        // dos casos válidos, nacional o internacional. Esto NO cambia la
+        // moneda ni permite manipular el monto — ambos casos se cobran en
+        // COP, calculado 100% por el servidor más abajo. No hay valor por
+        // defecto silencioso: si no llega "CO" o "INTL" exactos, se rechaza
+        // la solicitud completa.
         const rawCountry = sanitize(body["country"], 10).toUpperCase();
         if (!VALID_COUNTRIES.includes(rawCountry as CountryCode)) {
           return jsonResponse(
@@ -149,22 +145,6 @@ export const Route = createFileRoute("/api/checkout")({
         }
         const country = rawCountry as CountryCode;
         const isNational = country === "CO";
-        const currency = isNational ? "COP" : "USD";
-
-        // Wompi todavía no tiene USD habilitado en el panel de comercios:
-        // cortamos aquí, ANTES de reservar stock o crear el pedido, para no
-        // dejar reservas huérfanas como pasó el 8-9 de septiembre (2 pedidos
-        // "pending" en USD que nunca llegaron a Wompi y se quedaron con
-        // stock reservado indefinidamente).
-        if (!isNational && !WOMPI_INTL_ENABLED) {
-          return jsonResponse(
-            {
-              error:
-                "Los pagos internacionales están temporalmente deshabilitados. Escríbenos por Instagram para coordinar tu compra mientras lo habilitamos.",
-            },
-            503,
-          );
-        }
 
         if (cart.length === 0) {
           return jsonResponse({ error: "El carrito está vacío o es inválido." }, 400);
@@ -197,27 +177,12 @@ export const Route = createFileRoute("/api/checkout")({
           }
         }
 
-        // Credenciales de Wompi. La pasarela internacional es LA MISMA
-        // integración de Wompi (mismo widget, mismo esquema de firma
-        // sha256(reference+amount+currency+secret)), cambiando currency a
-        // USD. Si configuras llaves específicas para cobros internacionales
-        // en el dashboard de Wompi, defínelas en WOMPI_INTL_PUBLIC_KEY /
-        // WOMPI_INTL_INTEGRITY_SECRET; si no existen, se reutilizan las
-        // llaves nacionales (útil mientras activas el producto internacional
-        // en Wompi).
-        const integritySecretCo = process.env["WOMPI_INTEGRITY_SECRET"]?.trim();
-        const publicKeyCo = (process.env["VITE_WOMPI_PUBLIC_KEY"] ?? process.env["WOMPI_PUBLIC_KEY"])?.trim();
-        const integritySecretIntl =
-          (process.env["WOMPI_INTL_INTEGRITY_SECRET"] ?? process.env["WOMPI_INTEGRITY_SECRET"])?.trim();
-        const publicKeyIntl =
-          (process.env["VITE_WOMPI_INTL_PUBLIC_KEY"] ?? process.env["WOMPI_INTL_PUBLIC_KEY"] ?? publicKeyCo)?.trim();
-
-        const integritySecret = isNational ? integritySecretCo : integritySecretIntl;
-        const publicKey = isNational ? publicKeyCo : publicKeyIntl;
+        // Credenciales de Wompi: una sola cuenta, una sola moneda (COP) para
+        // todos los pedidos, nacionales e internacionales.
+        const integritySecret = process.env["WOMPI_INTEGRITY_SECRET"]?.trim();
+        const publicKey = (process.env["VITE_WOMPI_PUBLIC_KEY"] ?? process.env["WOMPI_PUBLIC_KEY"])?.trim();
         if (!integritySecret || !publicKey) {
-          console.error(
-            `[checkout] Faltan credenciales de Wompi para country=${country} (currency=${currency}).`,
-          );
+          console.error("[checkout] Faltan credenciales de Wompi.");
           return jsonResponse({ error: "El pago no está disponible en este momento." }, 500);
         }
 
@@ -282,21 +247,23 @@ export const Route = createFileRoute("/api/checkout")({
           });
         }
 
-        // El envío NO se cobra por este sistema. El subtotal SIEMPRE nace en
-        // COP desde `products.price_cop` / `product_sizes.extra_price_cop`
-        // en Supabase — el cliente jamás envía ni puede alterar un precio.
-        // Si es nacional se cobra ese subtotal en COP tal cual. Si es
-        // internacional se convierte a USD con la TRM FIJA de negocio
-        // (constante, no de mercado) y ESE es el precio fijo que se cobra.
+        // El envío NO se cobra por este sistema (ni nacional ni
+        // internacional: el internacional se cotiza y coordina aparte con
+        // el cliente). El subtotal SIEMPRE nace en COP desde
+        // `products.price_cop` / `product_sizes.extra_price_cop` en
+        // Supabase — el cliente jamás envía ni puede alterar un precio. Se
+        // cobra en pesos colombianos tal cual, sea pedido nacional o
+        // internacional; si el pedido es internacional, el banco o la
+        // tarjeta del cliente hace la conversión a su propia moneda al
+        // momento de pagar.
         const subtotalCop = lines.reduce((sum, l) => sum + l.unitPriceCop * l.qty, 0);
+        const currency = "COP" as const;
+        const amountInCents = subtotalCop * 100;
 
+        // Solo informativo: registra qué estimado en USD vio el cliente al
+        // pagar (con la TRM fija), para tener trazabilidad histórica. No
+        // afecta el monto cobrado.
         const fxRateUsed = isNational ? null : USD_TRM;
-        const amountInCents = isNational
-          ? subtotalCop * 100
-          : Math.round((subtotalCop / USD_TRM) * 100); // subtotal en USD, redondeado a centavos
-        const amountMajorUnits = isNational
-          ? subtotalCop
-          : Math.round((subtotalCop / USD_TRM) * 100) / 100;
 
         // Reservar stock de forma atómica (evita sobreventa por condición de
         // carrera): solo descuenta si todavía hay suficiente stock.
@@ -375,8 +342,8 @@ export const Route = createFileRoute("/api/checkout")({
           country,
           publicKey,
           signature,
-          subtotal: amountMajorUnits,
-          total: amountMajorUnits,
+          subtotal: subtotalCop,
+          total: subtotalCop,
           fxRateUsed,
         });
       },
