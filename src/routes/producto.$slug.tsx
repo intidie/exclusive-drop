@@ -127,10 +127,12 @@ function ProductPage() {
             <p className="mt-1 text-4xl md:text-5xl font-black tracking-tight animate-price-flash">
               {format(price)}
             </p>
-            <p className="text-sm text-white/60 mt-1 font-mono">
-              ≈ {formatAlt(price)}{" "}
-              <span className="text-xs opacity-60">(TRM {formatCOP(USD_TRM)}/USD)</span>
-            </p>
+            {!isInternational && (
+              <p className="text-sm text-white/60 mt-1 font-mono">
+                ≈ {formatAlt(price)}{" "}
+                <span className="text-xs opacity-60">(TRM {formatCOP(USD_TRM)}/USD)</span>
+              </p>
+            )}
             <p className="text-xs text-white/50 mt-1">
               Talla XXL: +{format(XXL_SURCHARGE_COP)} adicionales.
             </p>

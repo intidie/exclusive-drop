@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCart } from "@/lib/cart-context";
 import { FREE_SHIPPING_THRESHOLD_COP, PRICE, PRODUCTS, XXL_SURCHARGE_COP } from "@/lib/drop-data";
+import { useDisplayCurrency } from "@/lib/use-currency";
 import WompiCheckout from "@/components/WompiCheckout";
 
 // Precio estimado para mostrar en el carrito antes de pagar. El monto real
@@ -38,6 +39,7 @@ export function CartButton() {
 
 export default function CartDrawer() {
   const { items, removeItem, updateQty, isOpen, closeCart } = useCart();
+  const { format, isInternational } = useDisplayCurrency();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
 
   useEffect(() => {
@@ -130,7 +132,7 @@ export default function CartDrawer() {
                         </button>
                       </div>
                       <p className="text-sm font-mono">
-                        ${(estimateUnitPrice(i.slug, i.size) * i.qty).toLocaleString("es-CO")}
+                        {format(estimateUnitPrice(i.slug, i.size) * i.qty)}
                       </p>
                     </div>
                   </div>
@@ -143,7 +145,11 @@ export default function CartDrawer() {
                   <div className="h-1 bg-white/10">
                     <div className="h-1 bg-emerald-400 transition-all" style={{ width: `${progress}%` }} />
                   </div>
-                  {missing > 0 ? (
+                  {isInternational ? (
+                    <p className="text-[11px] text-white/55">
+                      El envío internacional se cotiza y coordina aparte con nuestro equipo.
+                    </p>
+                  ) : missing > 0 ? (
                     <p className="text-[11px] text-white/55">
                       Agrega ${missing.toLocaleString("es-CO")} más y el envío nacional es gratis.
                     </p>
@@ -152,11 +158,11 @@ export default function CartDrawer() {
                   )}
                   <div className="flex justify-between text-sm">
                     <span>Subtotal</span>
-                    <span className="font-mono">${subtotal.toLocaleString("es-CO")}</span>
+                    <span className="font-mono">{format(subtotal)}</span>
                   </div>
                   <p className="text-[10px] text-white/40">
                     El envío (si aplica) se coordina aparte y no se cobra por Wompi. Talla XXL
-                    incluye un recargo de $15.000.
+                    incluye un recargo de {format(XXL_SURCHARGE_COP)}.
                   </p>
                   <button
                     type="button"

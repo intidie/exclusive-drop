@@ -456,8 +456,8 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                   {isInternational && (
                     <div className="text-[11px] text-white/60 space-y-1.5">
                       <p>
-                        Subtotal estimado: {formatCop(estimatedSubtotalCop)} (≈ {formatUsd(estimatedSubtotalUsd)}{" "}
-                        USD, TRM referencial fija {formatCop(4000)}/USD).
+                        Subtotal estimado: {formatUsd(estimatedSubtotalUsd)} USD (cobro procesado
+                        en pesos colombianos, TRM fija {formatCop(4000)}/USD).
                       </p>
                       <p>
                         El cobro se realiza en pesos colombianos (COP); si tu tarjeta o banco está en

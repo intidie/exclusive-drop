@@ -69,11 +69,13 @@ export default function CatalogSection() {
               <div className="p-3 md:p-4">
                 <p className="micro text-white/40">{p.tag}</p>
                 <h3 className="mt-1 text-lg md:text-2xl font-display tracking-wide leading-none">{p.name}</h3>
-                <div className="mt-2 flex items-center gap-2 flex-wrap">
-                  <p className="text-sm font-mono text-white/70">{format(p.price ?? PRICE)}</p>
-                  <p className="text-[11px] font-mono text-white/40">
-                    ≈ {formatAlt(p.price ?? PRICE)}
-                  </p>
+                  <div className="mt-2 flex items-center gap-2 flex-wrap">
+                    <p className="text-sm font-mono text-white/70">{format(p.price ?? PRICE)}</p>
+                    {!isInternational && (
+                      <p className="text-[11px] font-mono text-white/40">
+                        ≈ {formatAlt(p.price ?? PRICE)}
+                      </p>
+                    )}
                   {p.slug === "machine-girl" && (
                     <span className="text-[9px] tracking-[0.15em] uppercase bg-red-600 text-white px-1.5 py-0.5">
                       Oferta única
