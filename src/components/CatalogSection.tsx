@@ -1,11 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
 import { PRODUCTS, PRICE } from "@/lib/drop-data";
-
-const formatCOP = (n: number) =>
-  new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
+import { useDisplayCurrency } from "@/lib/use-currency";
 
 export default function CatalogSection() {
+  const { format, formatAlt, isInternational } = useDisplayCurrency();
+
   return (
     <section id="drop" className="relative bg-black text-white pt-10 md:pt-14 pb-24 md:pb-32 px-6 grain scanlines overflow-hidden">
       <div className="max-w-6xl mx-auto relative z-10">
