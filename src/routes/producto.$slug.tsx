@@ -122,20 +122,27 @@ function ProductPage() {
             <p className="micro opacity-50">{product.tag}</p>
             <h1 className="mt-2 text-4xl md:text-6xl font-display tracking-wide leading-none">{product.name}</h1>
             <div className="mt-3 flex items-baseline gap-3 flex-wrap">
-              <span className="text-base text-white/40 line-through">{formatCOP(ORIGINAL_PRICE)}</span>
+              <span className="text-base text-white/40 line-through">{format(ORIGINAL_PRICE)}</span>
               <span className="text-[10px] tracking-[0.3em] uppercase bg-red-600 text-white px-2 py-0.5">Oferta</span>
               <CountdownTimer />
             </div>
             <p className="mt-1 text-4xl md:text-5xl font-black tracking-tight animate-price-flash">
-              {formatCOP(price)}
+              {format(price)}
             </p>
             <p className="text-sm text-white/60 mt-1 font-mono">
-              ≈ {formatUSD(Math.round(price / USD_TRM))} USD{" "}
+              ≈ {formatAlt(price)}{" "}
               <span className="text-xs opacity-60">(TRM {formatCOP(USD_TRM)}/USD)</span>
             </p>
             <p className="text-xs text-white/50 mt-1">
-              Talla XXL: +{formatCOP(XXL_SURCHARGE_COP)} adicionales.
+              Talla XXL: +{format(XXL_SURCHARGE_COP)} adicionales.
             </p>
+            {isInternational && (
+              <p className="text-xs text-white/45 mt-2 leading-relaxed">
+                Precios en dólares calculados con TRM fija de {formatCOP(USD_TRM)}/USD. El cobro se
+                procesa en pesos colombianos (COP); no somos responsables por la conversión ni por
+                los cargos que aplique el banco emisor de tu tarjeta.
+              </p>
+            )}
           </div>
 
           <p className="text-sm text-white/70 leading-relaxed">{product.description}</p>
