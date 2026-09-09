@@ -71,6 +71,7 @@ function ProductPage() {
   const [justAdded, setJustAdded] = useState(false);
   const [everAdded, setEverAdded] = useState(false);
   const { addItem, openCart } = useCart();
+  const { format, formatAlt, isInternational } = useDisplayCurrency();
 
   function handleAddToCart() {
     addItem({ slug: product.slug, name: product.name, size });
