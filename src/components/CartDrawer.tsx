@@ -162,7 +162,7 @@ export default function CartDrawer() {
                   </div>
                   <p className="text-[10px] text-white/40">
                     El envío (si aplica) se coordina aparte y no se cobra por Wompi. Talla XXL
-                    incluye un recargo de $15.000.
+                    incluye un recargo de {format(XXL_SURCHARGE_COP)}.
                   </p>
                   <button
                     type="button"
