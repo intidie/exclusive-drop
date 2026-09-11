@@ -16,7 +16,7 @@ function DecorImage({
   imageStyle?: React.CSSProperties;
 }) {
   return (
-    <div className={`relative ${className}`}>
+    <div className={className}>
       <img
         src={src}
         alt={alt}
@@ -49,7 +49,7 @@ export default function DecorLayer() {
       <DecorImage
         src="/images/decor-skeleton.webp"
         alt=""
-        className="absolute -right-24 top-[40%] w-80 md:w-[32rem] lg:w-[36rem] scale-x-[-1]"
+        className="absolute right-[-6rem] top-[40%] w-80 md:w-[32rem] lg:w-[36rem] scale-x-[-1]"
         imageStyle={{ animationDelay: "-6s" }}
       />
       <DecorImage
