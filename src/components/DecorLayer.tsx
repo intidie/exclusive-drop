@@ -10,14 +10,14 @@ export default function DecorLayer() {
         alt=""
         loading="lazy"
         decoding="async"
-        className="absolute -left-16 top-[6%] w-56 md:w-96 opacity-[0.65] mix-blend-screen animate-decor-drift"
+        className="absolute -left-16 top-[6%] w-56 md:w-96 opacity-[0.65] mix-blend-screen animate-decor-drift decor-fade"
       />
       <img
         src="/images/decor-skeleton.webp"
         alt=""
         loading="lazy"
         decoding="async"
-        className="absolute -right-20 top-[42%] w-64 md:w-[26rem] opacity-[0.65] mix-blend-screen scale-x-[-1] animate-decor-drift"
+        className="absolute -right-20 top-[42%] w-64 md:w-[26rem] opacity-[0.65] mix-blend-screen scale-x-[-1] animate-decor-drift decor-fade"
         style={{ animationDelay: "-6s" }}
       />
       <img
@@ -25,7 +25,7 @@ export default function DecorLayer() {
         alt=""
         loading="lazy"
         decoding="async"
-        className="absolute left-[8%] bottom-[-8%] w-36 md:w-56 opacity-[0.07] mix-blend-screen rotate-12 animate-decor-drift"
+        className="absolute left-[8%] bottom-[-8%] w-36 md:w-56 opacity-[0.07] mix-blend-screen rotate-12 animate-decor-drift decor-fade"
         style={{ animationDelay: "-12s" }}
       />
     </div>
