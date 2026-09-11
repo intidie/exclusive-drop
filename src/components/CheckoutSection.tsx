@@ -14,7 +14,7 @@ const METHODS = [
   { tag: "Wompi", title: "Nequi", desc: "Aprueba el pago desde tu app Nequi en segundos." },
   { tag: "Wompi", title: "Botón Bancolombia", desc: "Paga con tu cuenta de ahorros o corriente Bancolombia." },
   { tag: "Wompi", title: "Corresponsales y efectivo", desc: "Genera tu recibo y paga en efectivo en los puntos habilitados por Wompi." },
-  { tag: "Internacional", title: "Tarjetas internacionales", desc: "Si compras desde fuera de Colombia, el cobro se hace en pesos colombianos (COP) con la misma pasarela de Wompi; tu banco hace la conversión a tu moneda." },
+  { tag: "Internacional", title: "Tarjetas internacionales (precio en USD)", desc: "Si compras desde fuera de Colombia, ves el precio fijo en dólares, pero el cobro se procesa en pesos colombianos con la misma pasarela de Wompi." },
 ];
 
 export default function CheckoutSection() {
@@ -25,9 +25,10 @@ export default function CheckoutSection() {
           <p className="text-xs tracking-[0.3em] uppercase mb-3">Métodos de pago & envíos</p>
           <h2 className="text-4xl md:text-6xl font-display tracking-wide">Paga seguro con Wompi.</h2>
           <p className="mt-4 text-sm md:text-base text-white/60 max-w-2xl">
-            Todos los pagos se procesan a través de la pasarela Wompi: tarjeta, PSE, Nequi, botón
-            Bancolombia y efectivo en corresponsales para Colombia; tarjeta internacional si compras
-            desde fuera del país (el cobro siempre es en pesos colombianos, tu banco hace la conversión).
+            Todos los pagos se procesan a través de la pasarela Wompi, siempre en pesos
+            colombianos: tarjeta, PSE, Nequi, botón Bancolombia y efectivo en corresponsales para
+            Colombia; tarjeta internacional con precio fijo mostrado en dólares si compras desde
+            fuera del país.
           </p>
           <p className="mt-2 text-sm text-white/50 max-w-2xl">
             Talla XXL tiene un recargo de $15.000. Envío nacional gratis en compras superiores a
@@ -50,10 +51,15 @@ export default function CheckoutSection() {
             Envíos internacionales
           </h3>
           <p className="mt-3 text-sm text-white/60">
-            Ya puedes comprar desde fuera de Colombia: el cobro se hace en pesos colombianos (COP)
-            con la misma pasarela de Wompi, y tu banco hace la conversión a tu moneda. El costo y
+            Ya puedes comprar desde fuera de Colombia con precio fijo en dólares. El costo y
             tiempo de envío internacional se coordina directamente contigo por Instagram una vez
             registrado el pedido.
+          </p>
+          <p className="mt-3 text-xs text-amber-300/90 border border-amber-300/30 bg-amber-300/5 px-3 py-2 leading-relaxed">
+            ⚠ El cobro real se procesa en pesos colombianos (COP) a la TRM oficial del día
+            (Banco de la República) que se muestra en el checkout. No somos responsables por la
+            tasa de cambio o comisiones que aplique el banco o la entidad emisora de tu tarjeta
+            al convertir el monto a tu moneda local.
           </p>
         </motion.div>
 

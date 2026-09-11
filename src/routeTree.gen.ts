@@ -9,25 +9,27 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TerminosRouteImport } from './routes/terminos'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as PagosRouteImport } from './routes/pagos'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ProductoSlugRouteImport } from './routes/producto.$slug'
-import { Route as ApiWompiWebhookRouteImport } from './routes/api.wompi-webhook'
-import { Route as ApiTrackVisitRouteImport } from './routes/api.track-visit'
-import { Route as ApiGeoRouteImport } from './routes/api.geo'
-import { Route as ApiFxRouteImport } from './routes/api.fx'
+import { Route as IgRouteImport } from './routes/ig'
+import { Route as PagosRouteImport } from './routes/pagos'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as TerminosRouteImport } from './routes/terminos'
 import { Route as ApiCheckoutRouteImport } from './routes/api.checkout'
+import { Route as ApiFxRouteImport } from './routes/api.fx'
+import { Route as ApiGeoRouteImport } from './routes/api.geo'
+import { Route as ApiTrackVisitRouteImport } from './routes/api.track-visit'
+import { Route as ApiTrmRouteImport } from './routes/api.trm'
+import { Route as ApiWompiWebhookRouteImport } from './routes/api.wompi-webhook'
+import { Route as ProductoSlugRouteImport } from './routes/producto.$slug'
 
-const TerminosRoute = TerminosRouteImport.update({
-  id: '/terminos',
-  path: '/terminos',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
+const IgRoute = IgRouteImport.update({
+  id: '/ig',
+  path: '/ig',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PagosRoute = PagosRouteImport.update({
@@ -35,34 +37,14 @@ const PagosRoute = PagosRouteImport.update({
   path: '/pagos',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProductoSlugRoute = ProductoSlugRouteImport.update({
-  id: '/producto/$slug',
-  path: '/producto/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiWompiWebhookRoute = ApiWompiWebhookRouteImport.update({
-  id: '/api/wompi-webhook',
-  path: '/api/wompi-webhook',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiTrackVisitRoute = ApiTrackVisitRouteImport.update({
-  id: '/api/track-visit',
-  path: '/api/track-visit',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiGeoRoute = ApiGeoRouteImport.update({
-  id: '/api/geo',
-  path: '/api/geo',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiFxRoute = ApiFxRouteImport.update({
-  id: '/api/fx',
-  path: '/api/fx',
+const TerminosRoute = TerminosRouteImport.update({
+  id: '/terminos',
+  path: '/terminos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiCheckoutRoute = ApiCheckoutRouteImport.update({
@@ -70,9 +52,40 @@ const ApiCheckoutRoute = ApiCheckoutRouteImport.update({
   path: '/api/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiFxRoute = ApiFxRouteImport.update({
+  id: '/api/fx',
+  path: '/api/fx',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGeoRoute = ApiGeoRouteImport.update({
+  id: '/api/geo',
+  path: '/api/geo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTrackVisitRoute = ApiTrackVisitRouteImport.update({
+  id: '/api/track-visit',
+  path: '/api/track-visit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTrmRoute = ApiTrmRouteImport.update({
+  id: '/api/trm',
+  path: '/api/trm',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWompiWebhookRoute = ApiWompiWebhookRouteImport.update({
+  id: '/api/wompi-webhook',
+  path: '/api/wompi-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProductoSlugRoute = ProductoSlugRouteImport.update({
+  id: '/producto/$slug',
+  path: '/producto/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ig': typeof IgRoute
   '/pagos': typeof PagosRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terminos': typeof TerminosRoute
@@ -80,11 +93,13 @@ export interface FileRoutesByFullPath {
   '/api/fx': typeof ApiFxRoute
   '/api/geo': typeof ApiGeoRoute
   '/api/track-visit': typeof ApiTrackVisitRoute
+  '/api/trm': typeof ApiTrmRoute
   '/api/wompi-webhook': typeof ApiWompiWebhookRoute
   '/producto/$slug': typeof ProductoSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ig': typeof IgRoute
   '/pagos': typeof PagosRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terminos': typeof TerminosRoute
@@ -92,12 +107,14 @@ export interface FileRoutesByTo {
   '/api/fx': typeof ApiFxRoute
   '/api/geo': typeof ApiGeoRoute
   '/api/track-visit': typeof ApiTrackVisitRoute
+  '/api/trm': typeof ApiTrmRoute
   '/api/wompi-webhook': typeof ApiWompiWebhookRoute
   '/producto/$slug': typeof ProductoSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/ig': typeof IgRoute
   '/pagos': typeof PagosRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terminos': typeof TerminosRoute
@@ -105,6 +122,7 @@ export interface FileRoutesById {
   '/api/fx': typeof ApiFxRoute
   '/api/geo': typeof ApiGeoRoute
   '/api/track-visit': typeof ApiTrackVisitRoute
+  '/api/trm': typeof ApiTrmRoute
   '/api/wompi-webhook': typeof ApiWompiWebhookRoute
   '/producto/$slug': typeof ProductoSlugRoute
 }
@@ -112,6 +130,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/ig'
     | '/pagos'
     | '/sitemap.xml'
     | '/terminos'
@@ -119,11 +138,13 @@ export interface FileRouteTypes {
     | '/api/fx'
     | '/api/geo'
     | '/api/track-visit'
+    | '/api/trm'
     | '/api/wompi-webhook'
     | '/producto/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/ig'
     | '/pagos'
     | '/sitemap.xml'
     | '/terminos'
@@ -131,11 +152,13 @@ export interface FileRouteTypes {
     | '/api/fx'
     | '/api/geo'
     | '/api/track-visit'
+    | '/api/trm'
     | '/api/wompi-webhook'
     | '/producto/$slug'
   id:
     | '__root__'
     | '/'
+    | '/ig'
     | '/pagos'
     | '/sitemap.xml'
     | '/terminos'
@@ -143,12 +166,14 @@ export interface FileRouteTypes {
     | '/api/fx'
     | '/api/geo'
     | '/api/track-visit'
+    | '/api/trm'
     | '/api/wompi-webhook'
     | '/producto/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  IgRoute: typeof IgRoute
   PagosRoute: typeof PagosRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TerminosRoute: typeof TerminosRoute
@@ -156,24 +181,25 @@ export interface RootRouteChildren {
   ApiFxRoute: typeof ApiFxRoute
   ApiGeoRoute: typeof ApiGeoRoute
   ApiTrackVisitRoute: typeof ApiTrackVisitRoute
+  ApiTrmRoute: typeof ApiTrmRoute
   ApiWompiWebhookRoute: typeof ApiWompiWebhookRoute
   ProductoSlugRoute: typeof ProductoSlugRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/terminos': {
-      id: '/terminos'
-      path: '/terminos'
-      fullPath: '/terminos'
-      preLoaderRoute: typeof TerminosRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
+    '/ig': {
+      id: '/ig'
+      path: '/ig'
+      fullPath: '/ig'
+      preLoaderRoute: typeof IgRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pagos': {
@@ -183,46 +209,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PagosRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/producto/$slug': {
-      id: '/producto/$slug'
-      path: '/producto/$slug'
-      fullPath: '/producto/$slug'
-      preLoaderRoute: typeof ProductoSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/wompi-webhook': {
-      id: '/api/wompi-webhook'
-      path: '/api/wompi-webhook'
-      fullPath: '/api/wompi-webhook'
-      preLoaderRoute: typeof ApiWompiWebhookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/track-visit': {
-      id: '/api/track-visit'
-      path: '/api/track-visit'
-      fullPath: '/api/track-visit'
-      preLoaderRoute: typeof ApiTrackVisitRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/geo': {
-      id: '/api/geo'
-      path: '/api/geo'
-      fullPath: '/api/geo'
-      preLoaderRoute: typeof ApiGeoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/fx': {
-      id: '/api/fx'
-      path: '/api/fx'
-      fullPath: '/api/fx'
-      preLoaderRoute: typeof ApiFxRouteImport
+    '/terminos': {
+      id: '/terminos'
+      path: '/terminos'
+      fullPath: '/terminos'
+      preLoaderRoute: typeof TerminosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/checkout': {
@@ -232,11 +230,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/fx': {
+      id: '/api/fx'
+      path: '/api/fx'
+      fullPath: '/api/fx'
+      preLoaderRoute: typeof ApiFxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/geo': {
+      id: '/api/geo'
+      path: '/api/geo'
+      fullPath: '/api/geo'
+      preLoaderRoute: typeof ApiGeoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/track-visit': {
+      id: '/api/track-visit'
+      path: '/api/track-visit'
+      fullPath: '/api/track-visit'
+      preLoaderRoute: typeof ApiTrackVisitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/trm': {
+      id: '/api/trm'
+      path: '/api/trm'
+      fullPath: '/api/trm'
+      preLoaderRoute: typeof ApiTrmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wompi-webhook': {
+      id: '/api/wompi-webhook'
+      path: '/api/wompi-webhook'
+      fullPath: '/api/wompi-webhook'
+      preLoaderRoute: typeof ApiWompiWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/producto/$slug': {
+      id: '/producto/$slug'
+      path: '/producto/$slug'
+      fullPath: '/producto/$slug'
+      preLoaderRoute: typeof ProductoSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  IgRoute: IgRoute,
   PagosRoute: PagosRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TerminosRoute: TerminosRoute,
@@ -244,6 +285,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiFxRoute: ApiFxRoute,
   ApiGeoRoute: ApiGeoRoute,
   ApiTrackVisitRoute: ApiTrackVisitRoute,
+  ApiTrmRoute: ApiTrmRoute,
   ApiWompiWebhookRoute: ApiWompiWebhookRoute,
   ProductoSlugRoute: ProductoSlugRoute,
 }

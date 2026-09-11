@@ -1,16 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 
-// TRM fija de negocio (NO es la tasa de mercado del día, es un valor fijo
-// que la tienda decide). Wompi solo acepta COP en esta cuenta, así que el
-// monto que se cobra SIEMPRE es en pesos — nacional o internacional da
-// igual. Esta constante sirve únicamente para dejar guardado en el pedido
-// cuál era el estimado en dólares que vio el cliente al pagar (campo
-// informativo `fx_rate_used`); debe coincidir con USD_TRM en
-// src/lib/drop-data.ts, que es la que se usa para mostrar ese estimado en
-// el frontend.
-const USD_TRM = 4000;
-
 const VALID_SIZES = ["S", "M", "L", "XL", "XXL"];
 const VALID_COUNTRIES = ["CO", "INTL"] as const;
 type CountryCode = (typeof VALID_COUNTRIES)[number];
@@ -130,12 +120,11 @@ export const Route = createFileRoute("/api/checkout")({
         const state = sanitize(body["state"], 60);
         const destinationCountry = sanitize(body["destinationCountry"], 60);
 
-        // Único dato de "categoría de envío" que decide el cliente: solo hay
-        // dos casos válidos, nacional o internacional. Esto NO cambia la
-        // moneda ni permite manipular el monto — ambos casos se cobran en
-        // COP, calculado 100% por el servidor más abajo. No hay valor por
-        // defecto silencioso: si no llega "CO" o "INTL" exactos, se rechaza
-        // la solicitud completa.
+        // Único dato de "categoría de precio" que decide el cliente: solo
+        // hay dos casos válidos, nacional o internacional. Esto NO permite
+        // manipular el monto — cada categoría tiene un precio 100% calculado
+        // por el servidor más abajo. No hay valor por defecto silencioso: si
+        // no llega "CO" o "INTL" exactos, se rechaza la solicitud completa.
         const rawCountry = sanitize(body["country"], 10).toUpperCase();
         if (!VALID_COUNTRIES.includes(rawCountry as CountryCode)) {
           return jsonResponse(
@@ -145,6 +134,14 @@ export const Route = createFileRoute("/api/checkout")({
         }
         const country = rawCountry as CountryCode;
         const isNational = country === "CO";
+
+        // Wompi confirmó que la pasarela internacional NO puede cobrar en
+        // USD (no está habilitado en el comercio). Por eso el cobro
+        // SIEMPRE se procesa en COP con Wompi, sea nacional o internacional.
+        // Al cliente internacional se le MUESTRA el precio en dólares (con
+        // la TRM fija de negocio) solo como referencia informativa; lo que
+        // Wompi factura de verdad siempre es el equivalente en COP.
+        const currency = "COP" as const;
 
         if (cart.length === 0) {
           return jsonResponse({ error: "El carrito está vacío o es inválido." }, 400);
@@ -177,12 +174,28 @@ export const Route = createFileRoute("/api/checkout")({
           }
         }
 
-        // Credenciales de Wompi: una sola cuenta, una sola moneda (COP) para
-        // todos los pedidos, nacionales e internacionales.
-        const integritySecret = process.env["WOMPI_INTEGRITY_SECRET"]?.trim();
-        const publicKey = (process.env["VITE_WOMPI_PUBLIC_KEY"] ?? process.env["WOMPI_PUBLIC_KEY"])?.trim();
+        // Credenciales de Wompi. La pasarela internacional usa el MISMO
+        // widget, la misma firma sha256(reference+amount+currency+secret) y
+        // la misma moneda (COP) que la nacional — Wompi no tiene habilitado
+        // cobro en USD para este comercio. Si en el futuro Inti configura
+        // llaves de Wompi específicas para el flujo internacional (por
+        // ejemplo, otra sub-cuenta para separar reportes), puede definirlas
+        // en WOMPI_INTL_PUBLIC_KEY / WOMPI_INTL_INTEGRITY_SECRET; si no
+        // existen, se reutilizan las llaves nacionales (comportamiento por
+        // defecto, y lo normal ahora que la moneda es la misma).
+        const integritySecretCo = process.env["WOMPI_INTEGRITY_SECRET"]?.trim();
+        const publicKeyCo = (process.env["VITE_WOMPI_PUBLIC_KEY"] ?? process.env["WOMPI_PUBLIC_KEY"])?.trim();
+        const integritySecretIntl =
+          (process.env["WOMPI_INTL_INTEGRITY_SECRET"] ?? process.env["WOMPI_INTEGRITY_SECRET"])?.trim();
+        const publicKeyIntl =
+          (process.env["VITE_WOMPI_INTL_PUBLIC_KEY"] ?? process.env["WOMPI_INTL_PUBLIC_KEY"] ?? publicKeyCo)?.trim();
+
+        const integritySecret = isNational ? integritySecretCo : integritySecretIntl;
+        const publicKey = isNational ? publicKeyCo : publicKeyIntl;
         if (!integritySecret || !publicKey) {
-          console.error("[checkout] Faltan credenciales de Wompi.");
+          console.error(
+            `[checkout] Faltan credenciales de Wompi para country=${country} (currency=${currency}).`,
+          );
           return jsonResponse({ error: "El pago no está disponible en este momento." }, 500);
         }
 
@@ -247,23 +260,23 @@ export const Route = createFileRoute("/api/checkout")({
           });
         }
 
-        // El envío NO se cobra por este sistema (ni nacional ni
-        // internacional: el internacional se cotiza y coordina aparte con
-        // el cliente). El subtotal SIEMPRE nace en COP desde
-        // `products.price_cop` / `product_sizes.extra_price_cop` en
-        // Supabase — el cliente jamás envía ni puede alterar un precio. Se
-        // cobra en pesos colombianos tal cual, sea pedido nacional o
-        // internacional; si el pedido es internacional, el banco o la
-        // tarjeta del cliente hace la conversión a su propia moneda al
-        // momento de pagar.
+        // El envío NO se cobra por este sistema. El subtotal SIEMPRE nace en
+        // COP desde `products.price_cop` / `product_sizes.extra_price_cop`
+        // en Supabase — el cliente jamás envía ni puede alterar un precio.
+        // El monto que se cobra en Wompi SIEMPRE es este subtotal en COP,
+        // sea pedido nacional o internacional (ver nota de `currency` arriba).
         const subtotalCop = lines.reduce((sum, l) => sum + l.unitPriceCop * l.qty, 0);
-        const currency = "COP" as const;
-        const amountInCents = subtotalCop * 100;
 
-        // Solo informativo: registra qué estimado en USD vio el cliente al
-        // pagar (con la TRM fija), para tener trazabilidad histórica. No
-        // afecta el monto cobrado.
-        const fxRateUsed = isNational ? null : USD_TRM;
+        // fxRateUsed / usdEstimate quedan guardados solo como referencia de
+        // cuánto vio el cliente internacional en dólares al pagar (TRM
+        // oficial del Banco de la República al momento del pago). NO
+        // afectan el monto real cobrado por Wompi, que siempre es en COP.
+        const { getTrm } = await import("@/lib/trm");
+        const fxRateUsed = isNational ? null : (await getTrm()).trm;
+        const usdEstimate =
+          isNational || fxRateUsed == null ? null : Math.round((subtotalCop / fxRateUsed) * 100) / 100;
+        const amountInCents = subtotalCop * 100;
+        const amountMajorUnits = subtotalCop;
 
         // Reservar stock de forma atómica (evita sobreventa por condición de
         // carrera): solo descuenta si todavía hay suficiente stock.
@@ -342,9 +355,10 @@ export const Route = createFileRoute("/api/checkout")({
           country,
           publicKey,
           signature,
-          subtotal: subtotalCop,
-          total: subtotalCop,
+          subtotal: amountMajorUnits,
+          total: amountMajorUnits,
           fxRateUsed,
+          usdEstimate,
         });
       },
     },
