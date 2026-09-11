@@ -11,6 +11,7 @@ export async function getUsdCopRate(): Promise<{ rate: number; live: boolean }> 
   try {
     const res = await fetch("https://open.er-api.com/v6/latest/USD", {
       headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(5000),
     });
     if (res.ok) {
       const data = (await res.json()) as { rates?: Record<string, number> };
