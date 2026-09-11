@@ -1,32 +1,62 @@
 /**
  * Decorative skeleton sketch repeated down the whole page (inverted, no background).
  * Purely visual: fixed, non-interactive, very low opacity.
+ * Each decoration is rendered as a sharp centre layer plus a blurred edge layer
+ * so the middle stays crisp while the borders feather out smoothly.
  */
+function DecorImage({
+  src,
+  alt,
+  className,
+  imageStyle,
+}: {
+  src: string;
+  alt: string;
+  className: string;
+  imageStyle?: React.CSSProperties;
+}) {
+  return (
+    <div className={`relative ${className}`}>
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        decoding="async"
+        style={imageStyle}
+        className="absolute inset-0 h-full w-full object-contain opacity-[0.65] mix-blend-screen animate-decor-drift decor-sharp"
+      />
+      <img
+        src={src}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        style={imageStyle}
+        className="absolute inset-0 h-full w-full object-contain opacity-[0.65] mix-blend-screen animate-decor-drift decor-blur"
+        aria-hidden
+      />
+    </div>
+  );
+}
+
 export default function DecorLayer() {
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-      <img
+      <DecorImage
         src="/images/decor-skeleton.webp"
         alt=""
-        loading="lazy"
-        decoding="async"
-        className="absolute -left-16 top-[6%] w-56 md:w-96 opacity-[0.65] mix-blend-screen animate-decor-drift decor-fade"
+        className="absolute -left-20 top-[4%] w-72 md:w-[28rem] lg:w-[32rem]"
       />
-      <img
+      <DecorImage
         src="/images/decor-skeleton.webp"
         alt=""
-        loading="lazy"
-        decoding="async"
-        className="absolute -right-20 top-[42%] w-64 md:w-[26rem] opacity-[0.65] mix-blend-screen scale-x-[-1] animate-decor-drift decor-fade"
-        style={{ animationDelay: "-6s" }}
+        className="absolute -right-24 top-[40%] w-80 md:w-[32rem] lg:w-[36rem] scale-x-[-1]"
+        imageStyle={{ animationDelay: "-6s" }}
       />
-      <img
+      <DecorImage
         src="/images/decor-skeleton.webp"
         alt=""
-        loading="lazy"
-        decoding="async"
-        className="absolute left-[8%] bottom-[-8%] w-36 md:w-56 opacity-[0.07] mix-blend-screen rotate-12 animate-decor-drift decor-fade"
-        style={{ animationDelay: "-12s" }}
+        className="absolute left-[6%] bottom-[-10%] w-44 md:w-64 lg:w-72 rotate-12"
+        imageStyle={{ animationDelay: "-12s" }}
       />
     </div>
   );
