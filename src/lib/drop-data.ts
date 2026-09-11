@@ -3,13 +3,9 @@ export const SIZES = ["S", "M", "L", "XL", "XXL"];
 export const PRINT_SPEC =
   "Estampado en DTF máxima calidad. No le salen motas, máxima calidad.";
 
-// El precio real que se cobra SIEMPRE se cobra en COP contra la tabla
+// El precio real que se cobra SIEMPRE lo valida el servidor contra la tabla
 // `products`/`product_sizes` en Supabase (ver src/routes/api.checkout.ts).
-// El equivalente en dólares para clientes internacionales se calcula con
-// la TRM OFICIAL del día (Banco de la República), obtenida en vivo desde
-// /api/trm — ver src/lib/trm.ts. Aquí NO hay ninguna tasa fija: si la API
-// de la TRM llegara a fallar, el propio /api/trm devuelve un valor de
-// respaldo, nunca este archivo.
+// Estas constantes son solo para mostrar un estimado antes de pagar.
 export const PRICE = 89999;
 export const XXL_SURCHARGE_COP = 15000;
 
@@ -57,10 +53,9 @@ export function formatCop(cop: number): string {
   return `$${Math.round(cop).toLocaleString("es-CO")}`;
 }
 
-// Convierte un valor en COP a su equivalente en USD usando la TRM que se le
-// pase (siempre la TRM OFICIAL del día, obtenida de /api/trm — ver
-// src/lib/trm.ts). Es solo para PREVISUALIZAR: el monto real que se cobra
-// siempre lo recalcula el servidor en src/routes/api.checkout.ts.
+// Convierte un valor en COP a su equivalente fijo en USD usando la TRM de
+// negocio. Es solo para PREVISUALIZAR: el monto real que se cobra siempre
+// lo recalcula el servidor en src/routes/api.checkout.ts.
 export function copToUsd(cop: number, trm: number): number {
   return Math.round((cop / trm) * 100) / 100;
 }
