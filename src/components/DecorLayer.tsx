@@ -16,7 +16,7 @@ function DecorImage({
   imageStyle?: React.CSSProperties;
 }) {
   return (
-    <div className={`relative ${className}`}>
+    <div className={className}>
       <img
         src={src}
         alt={alt}
