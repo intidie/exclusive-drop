@@ -1,23 +1,16 @@
 import { useEffect, useState } from "react";
 import { copToUsd, formatUsd, formatCop } from "@/lib/drop-data";
 
-// Detección de país SOLO para presentación de precios (no afecta el cobro:
-// el monto real siempre lo calcula el servidor en src/routes/api.checkout.ts).
-// 1) Cabecera de IP que agrega el hosting (/api/geo).
-// 2) Si no hay cabecera, se estima por zona horaria del navegador.
+const FALLBACK_TRM_GUESS = 4000;
 let cached: string | null | undefined;
 let inflight: Promise<string | null> | null = null;
 
-// TRM real (USD -> COP) para convertir el precio a mostrar. Se pide una
-// sola vez por carga de página y se comparte entre todos los componentes
-// que usan este hook (ver src/lib/fx.server.ts / src/routes/api.fx.ts).
-// Mientras no responda, se usa FALLBACK_TRM_GUESS solo para que la
-// pantalla no muestre $0 — nunca se usa para cobrar nada.
-const FALLBACK_TRM_GUESS = 4000;
 let cachedTrm: number | undefined;
 let trmInflight: Promise<number> | null = null;
 
 function loadTrm(): Promise<number> {
+  // Evita ejecutar fetch relativo en Node.js durante SSR
+  if (typeof window === "undefined") return Promise.resolve(FALLBACK_TRM_GUESS);
   if (cachedTrm !== undefined) return Promise.resolve(cachedTrm);
   if (!trmInflight) {
     trmInflight = fetch("/api/fx")
@@ -36,6 +29,7 @@ function loadTrm(): Promise<number> {
 }
 
 function guessFromTimeZone(): string | null {
+  if (typeof window === "undefined") return null;
   try {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     if (!tz) return null;
@@ -46,6 +40,8 @@ function guessFromTimeZone(): string | null {
 }
 
 function loadCountry(): Promise<string | null> {
+  // Evita ejecutar fetch relativo en Node.js durante SSR
+  if (typeof window === "undefined") return Promise.resolve(null);
   if (cached !== undefined) return Promise.resolve(cached ?? null);
   if (!inflight) {
     inflight = fetch("/api/geo")
@@ -83,10 +79,7 @@ export function useDisplayCurrency() {
     country,
     isInternational,
     trm,
-    /** Precio principal a mostrar según el país detectado. */
     format: (cop: number) => (isInternational ? formatUsd(copToUsd(cop, trm)) : formatCop(cop)),
-    /** Equivalencia secundaria (la otra moneda). */
     formatAlt: (cop: number) => (isInternational ? formatCop(cop) : formatUsd(copToUsd(cop, trm))),
   };
 }
-
