@@ -8,11 +8,12 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
   tanstackStart: {
-    // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-    // nitro/vite builds from this
     server: { entry: "server" },
   },
-  // Outside Lovable builds (e.g. Vercel CI), target the Vercel preset.
-  // Inside Lovable, this override is ignored and Cloudflare is forced.
-  nitro: { preset: "vercel" },
+  nitro: {
+    preset: "vercel",
+    externals: {
+      inline: ["tslib"],
+    },
+  },
 });
