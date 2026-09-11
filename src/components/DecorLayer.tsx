@@ -8,20 +8,21 @@ function DecorImage({
   src,
   alt,
   className,
-  style,
+  imageStyle,
 }: {
   src: string;
   alt: string;
   className: string;
-  style?: React.CSSProperties;
+  imageStyle?: React.CSSProperties;
 }) {
   return (
-    <div className={`relative ${className}`} style={style}>
+    <div className={`relative ${className}`}>
       <img
         src={src}
         alt={alt}
         loading="lazy"
         decoding="async"
+        style={imageStyle}
         className="absolute inset-0 h-full w-full object-contain opacity-[0.65] mix-blend-screen animate-decor-drift decor-sharp"
       />
       <img
@@ -29,6 +30,7 @@ function DecorImage({
         alt=""
         loading="lazy"
         decoding="async"
+        style={imageStyle}
         className="absolute inset-0 h-full w-full object-contain opacity-[0.65] mix-blend-screen animate-decor-drift decor-blur"
         aria-hidden
       />
@@ -48,13 +50,13 @@ export default function DecorLayer() {
         src="/images/decor-skeleton.webp"
         alt=""
         className="absolute -right-24 top-[40%] w-80 md:w-[32rem] lg:w-[36rem] scale-x-[-1]"
-        style={{ animationDelay: "-6s" }}
+        imageStyle={{ animationDelay: "-6s" }}
       />
       <DecorImage
         src="/images/decor-skeleton.webp"
         alt=""
         className="absolute left-[6%] bottom-[-10%] w-44 md:w-64 lg:w-72 rotate-12"
-        style={{ animationDelay: "-12s" }}
+        imageStyle={{ animationDelay: "-12s" }}
       />
     </div>
   );
