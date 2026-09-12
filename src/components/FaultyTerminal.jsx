@@ -145,13 +145,17 @@ function hexToRgb(hex) {
   return [((num >> 16) & 255) / 255, ((num >> 8) & 255) / 255, (num & 255) / 255];
 }
 
+function isMobileDevice() {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia?.('(pointer: coarse)').matches || window.innerWidth < 768;
+}
+
 function computeDpr(custom) {
   if (typeof window === 'undefined') return 1;
   if (typeof custom === 'number') return custom;
   const raw = window.devicePixelRatio || 1;
-  const isMobile =
-    window.matchMedia?.('(pointer: coarse)').matches || window.innerWidth < 768;
-  return isMobile ? Math.min(raw, 1) : Math.min(raw, 1.5);
+  // Mobile GPUs choke on full-res fullscreen shaders: render at ~60% and upscale.
+  return isMobileDevice() ? Math.min(raw, 0.65) : Math.min(raw, 1.5);
 }
 
 export default function FaultyTerminal({
