@@ -231,16 +231,27 @@ export default function FaultyTerminal({
     });
     const mesh = new Mesh(gl, { geometry, program });
 
-    function resize() {
+    let lastW = 0;
+    let lastH = 0;
+    function resize(force) {
       if (!ctn) return;
-      renderer.setSize(ctn.offsetWidth, ctn.offsetHeight);
+      const w = ctn.offsetWidth;
+      const h = ctn.offsetHeight;
+      // On mobile the URL bar collapsing changes the height by ~60-120px mid
+      // scroll; re-sizing the canvas there causes the visible "jump". Ignore
+      // height-only changes on touch devices.
+      if (!force && mobile && w === lastW && Math.abs(h - lastH) < 160) return;
+      if (!force && w === lastW && h === lastH) return;
+      lastW = w;
+      lastH = h;
+      renderer.setSize(w, h);
       program.uniforms.iResolution.value = new Color(
         gl.canvas.width, gl.canvas.height, gl.canvas.width / gl.canvas.height
       );
     }
-    const resizeObserver = new ResizeObserver(resize);
+    const resizeObserver = new ResizeObserver(() => resize(false));
     resizeObserver.observe(ctn);
-    resize();
+    resize(true);
 
     // Pause render loop when offscreen (saves GPU on scroll).
     const io = new IntersectionObserver(
