@@ -18,16 +18,18 @@ const DecorLayer = lazy(() => import("@/components/DecorLayer"));
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "LIVE LEAKS by INTI(t) — Drop único" },
+      { title: "INTInet - LIVE LEAKS by INTI(t)" },
       {
         name: "description",
         content:
           "Drop exclusivo de camisas LIVE LEAKS by INTI(t). Todas las tallas, pago seguro con Wompi y envíos nacionales.",
       },
-      { property: "og:title", content: "LIVE LEAKS by INTI(t) — Drop único" },
+      { property: "og:title", content: "INTInet - LIVE LEAKS by INTI(t)" },
       { property: "og:description", content: "Drop exclusivo de camisas LIVE LEAKS by INTI(t), con todas las tallas disponibles." },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "/" },
+      { property: "og:image", content: "https://inti-net.vercel.app/images/liveleak-logo-transparent.webp" },
+      { name: "twitter:image", content: "https://inti-net.vercel.app/images/liveleak-logo-transparent.webp" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
