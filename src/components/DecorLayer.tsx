@@ -23,7 +23,7 @@ function DecorImage({
         loading="lazy"
         decoding="async"
         style={imageStyle}
-        className="block h-auto w-full object-contain opacity-[0.65] mix-blend-screen animate-decor-drift decor-sharp"
+        className="block h-auto w-full object-contain opacity-[0.45] md:opacity-[0.65] mix-blend-screen animate-decor-drift decor-sharp"
       />
       <img
         src={src}
