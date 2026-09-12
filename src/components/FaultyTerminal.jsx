@@ -266,12 +266,19 @@ export default function FaultyTerminal({
     );
     io.observe(ctn);
 
+    // Cap the frame rate on phones: 30fps looks identical for this effect and
+    // halves GPU work, leaving the main thread free for smooth scrolling.
+    const minFrameMs = mobile ? 33 : 0;
+    let lastFrame = 0;
+
     const update = t => {
       if (!visibleRef.current) {
         rafRef.current = 0;
         return;
       }
       rafRef.current = requestAnimationFrame(update);
+      if (minFrameMs && t - lastFrame < minFrameMs) return;
+      lastFrame = t;
       if (pageLoadAnimation && loadAnimationStartRef.current === 0) loadAnimationStartRef.current = t;
 
       let elapsed = frozenTimeRef.current;
