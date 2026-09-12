@@ -180,7 +180,15 @@ export default function FaultyTerminal({
   useEffect(() => {
     const ctn = containerRef.current;
     if (!ctn) return;
-    const renderer = new Renderer({ dpr: resolvedDpr, antialias: false });
+    const mobile = isMobileDevice();
+    const renderer = new Renderer({
+      dpr: resolvedDpr,
+      antialias: false,
+      alpha: false,
+      depth: false,
+      stencil: false,
+      powerPreference: 'low-power'
+    });
     const gl = renderer.gl;
     gl.clearColor(0, 0, 0, 1);
     const geometry = new Triangle(gl);
