@@ -40,7 +40,13 @@ function DecorImage({
 
 export default function DecorLayer() {
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+    // Hidden on phones: fixed layers with blur + mix-blend-screen force a full
+    // repaint on every scroll frame, which is what makes mobile scrolling jump.
+    <div
+      aria-hidden
+      className="pointer-events-none fixed inset-0 z-0 hidden overflow-hidden md:block"
+      style={{ contain: "paint" }}
+    >
       <DecorImage
         src="/images/decor-skeleton.webp"
         alt=""

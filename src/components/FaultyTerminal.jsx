@@ -145,13 +145,17 @@ function hexToRgb(hex) {
   return [((num >> 16) & 255) / 255, ((num >> 8) & 255) / 255, (num & 255) / 255];
 }
 
+function isMobileDevice() {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia?.('(pointer: coarse)').matches || window.innerWidth < 768;
+}
+
 function computeDpr(custom) {
   if (typeof window === 'undefined') return 1;
   if (typeof custom === 'number') return custom;
   const raw = window.devicePixelRatio || 1;
-  const isMobile =
-    window.matchMedia?.('(pointer: coarse)').matches || window.innerWidth < 768;
-  return isMobile ? Math.min(raw, 1) : Math.min(raw, 1.5);
+  // Mobile GPUs choke on full-res fullscreen shaders: render at ~60% and upscale.
+  return isMobileDevice() ? Math.min(raw, 0.65) : Math.min(raw, 1.5);
 }
 
 export default function FaultyTerminal({
@@ -176,7 +180,15 @@ export default function FaultyTerminal({
   useEffect(() => {
     const ctn = containerRef.current;
     if (!ctn) return;
-    const renderer = new Renderer({ dpr: resolvedDpr, antialias: false });
+    const mobile = isMobileDevice();
+    const renderer = new Renderer({
+      dpr: resolvedDpr,
+      antialias: false,
+      alpha: false,
+      depth: false,
+      stencil: false,
+      powerPreference: 'low-power'
+    });
     const gl = renderer.gl;
     gl.clearColor(0, 0, 0, 1);
     const geometry = new Triangle(gl);
@@ -219,16 +231,27 @@ export default function FaultyTerminal({
     });
     const mesh = new Mesh(gl, { geometry, program });
 
-    function resize() {
+    let lastW = 0;
+    let lastH = 0;
+    function resize(force) {
       if (!ctn) return;
-      renderer.setSize(ctn.offsetWidth, ctn.offsetHeight);
+      const w = ctn.offsetWidth;
+      const h = ctn.offsetHeight;
+      // On mobile the URL bar collapsing changes the height by ~60-120px mid
+      // scroll; re-sizing the canvas there causes the visible "jump". Ignore
+      // height-only changes on touch devices.
+      if (!force && mobile && w === lastW && Math.abs(h - lastH) < 160) return;
+      if (!force && w === lastW && h === lastH) return;
+      lastW = w;
+      lastH = h;
+      renderer.setSize(w, h);
       program.uniforms.iResolution.value = new Color(
         gl.canvas.width, gl.canvas.height, gl.canvas.width / gl.canvas.height
       );
     }
-    const resizeObserver = new ResizeObserver(resize);
+    const resizeObserver = new ResizeObserver(() => resize(false));
     resizeObserver.observe(ctn);
-    resize();
+    resize(true);
 
     // Pause render loop when offscreen (saves GPU on scroll).
     const io = new IntersectionObserver(
@@ -243,12 +266,19 @@ export default function FaultyTerminal({
     );
     io.observe(ctn);
 
+    // Cap the frame rate on phones: 30fps looks identical for this effect and
+    // halves GPU work, leaving the main thread free for smooth scrolling.
+    const minFrameMs = mobile ? 33 : 0;
+    let lastFrame = 0;
+
     const update = t => {
       if (!visibleRef.current) {
         rafRef.current = 0;
         return;
       }
       rafRef.current = requestAnimationFrame(update);
+      if (minFrameMs && t - lastFrame < minFrameMs) return;
+      lastFrame = t;
       if (pageLoadAnimation && loadAnimationStartRef.current === 0) loadAnimationStartRef.current = t;
 
       let elapsed = frozenTimeRef.current;
