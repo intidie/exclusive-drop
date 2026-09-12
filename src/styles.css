@@ -376,3 +376,34 @@
 @media (prefers-reduced-motion: reduce) {
   .matrix-column { animation: none; }
 }
+
+/* ── Mobile performance ──────────────────────────────────────────
+   Los efectos de grano y scanlines repintan la pantalla completa en
+   cada frame, lo que provoca tirones al hacer scroll en celulares. */
+@media (max-width: 767px) {
+  .grain::after {
+    animation: none;
+    opacity: 0.08;
+  }
+
+  .animate-decor-drift {
+    animation: none;
+  }
+
+  html {
+    scroll-behavior: auto;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    overscroll-behavior-y: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-decor-drift,
+  .animate-logo-pulse,
+  .grain::after {
+    animation: none;
+  }
+}
