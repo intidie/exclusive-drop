@@ -31,7 +31,7 @@ function DecorImage({
         loading="lazy"
         decoding="async"
         style={imageStyle}
-        className="absolute inset-0 h-full w-full object-contain opacity-[0.65] mix-blend-screen animate-decor-drift decor-blur"
+        className="absolute inset-0 hidden h-full w-full object-contain opacity-[0.65] mix-blend-screen animate-decor-drift decor-blur md:block"
         aria-hidden
       />
     </div>
@@ -44,7 +44,7 @@ export default function DecorLayer() {
     // repaint on every scroll frame, which is what makes mobile scrolling jump.
     <div
       aria-hidden
-      className="pointer-events-none fixed inset-0 z-0 hidden overflow-hidden md:block"
+      className="pointer-events-none fixed inset-0 z-0 block overflow-hidden"
       style={{ contain: "paint" }}
     >
       <DecorImage
