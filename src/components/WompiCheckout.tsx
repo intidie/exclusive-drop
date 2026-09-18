@@ -145,6 +145,22 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
   // depende de este valor (ver src/routes/api.checkout.ts).
   const [trm, setTrm] = useState<number>(4000);
 
+  // Cotización de envío EN VIVO (Envia.com), SOLO informativa — nunca se
+  // suma al monto que cobra Wompi (ver src/routes/api.checkout.ts, que no
+  // importa nada de esto). `domesticQuote` aplica a country === "CO";
+  // `intlQuotes` aplica a country === "INTL".
+  const [domesticQuote, setDomesticQuote] = useState<{
+    estimateCop: number;
+    carrier: string;
+    service: string;
+  } | null>(null);
+  const [intlQuotes, setIntlQuotes] = useState<{
+    premium: { priceCop: number; carrier: string; service: string; days: number } | null;
+    economica: { priceCop: number; carrier: string; service: string; days: number } | null;
+  }>({ premium: null, economica: null });
+  const [selectedShipping, setSelectedShipping] = useState<"premium" | "economica" | "ultra" | "">("");
+  const [shippingConfirmed, setShippingConfirmed] = useState(false);
+
   useEffect(() => {
     let cancelled = false;
     fetch("/api/fx")
@@ -198,6 +214,10 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
       setBusy(false);
       setTotalCop(null);
       setTurnstileToken("");
+      setDomesticQuote(null);
+      setIntlQuotes({ premium: null, economica: null });
+      setSelectedShipping("");
+      setShippingConfirmed(false);
       return;
     }
 
@@ -242,13 +262,97 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
     });
   }
 
+  const isNationalCountry = draft.country === "CO";
+  const isInternationalCountry = draft.country === "INTL";
+
+  // Cotización de envío EN VIVO, solo informativa (ver comentario en el
+  // estado de arriba). Se dispara sola apenas están completos los campos
+  // de dirección que YA existen — sin pedir nada nuevo ni botón de
+  // "cotizar". Cualquier cambio en la dirección invalida la selección y
+  // confirmación previas, porque el estimado cambia. Si Envia falla o no
+  // hay token configurado, la ruta responde con los campos en `null` y
+  // simplemente no se muestra nada (nacional) o solo queda la tarjeta fija
+  // "Ultra-económica" (internacional) — el pago nunca se bloquea por eso.
+  useEffect(() => {
+    if (!open) return;
+
+    setSelectedShipping("");
+    setShippingConfirmed(false);
+
+    const qty = items.reduce((sum, i) => sum + i.qty, 0);
+    let cancelled = false;
+
+    if (isNationalCountry) {
+      setDomesticQuote(null);
+      if (!draft.city || !draft.department) return;
+      const timer = setTimeout(() => {
+        fetch("/api/shipping-quote", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ country: "CO", city: draft.city, department: draft.department, qty }),
+        })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d: { domestic?: typeof domesticQuote } | null) => {
+            if (!cancelled) setDomesticQuote(d?.domestic ?? null);
+          })
+          .catch(() => {
+            if (!cancelled) setDomesticQuote(null);
+          });
+      }, 600);
+      return () => {
+        cancelled = true;
+        clearTimeout(timer);
+      };
+    }
+
+    if (isInternationalCountry) {
+      setIntlQuotes({ premium: null, economica: null });
+      if (!draft.city || !draft.state || !draft.postalCode || !draft.destinationCountry) return;
+      const timer = setTimeout(() => {
+        fetch("/api/shipping-quote", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            country: "INTL",
+            city: draft.city,
+            state: draft.state,
+            postalCode: draft.postalCode,
+            destinationCountry: draft.destinationCountry,
+            qty,
+          }),
+        })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d: { premium?: typeof intlQuotes.premium; economica?: typeof intlQuotes.economica } | null) => {
+            if (!cancelled) setIntlQuotes({ premium: d?.premium ?? null, economica: d?.economica ?? null });
+          })
+          .catch(() => {
+            if (!cancelled) setIntlQuotes({ premium: null, economica: null });
+          });
+      }, 600);
+      return () => {
+        cancelled = true;
+        clearTimeout(timer);
+      };
+    }
+  }, [
+    open,
+    isNationalCountry,
+    isInternationalCountry,
+    draft.city,
+    draft.department,
+    draft.state,
+    draft.postalCode,
+    draft.destinationCountry,
+    items,
+  ]);
+
   const estimatedSubtotalCop = items.reduce(
     (sum, i) => sum + estimateUnitPriceCop(i.slug, i.size) * i.qty,
     0,
   );
   const estimatedSubtotalUsd = copToUsd(estimatedSubtotalCop, trm);
-  const isNational = draft.country === "CO";
-  const isInternational = draft.country === "INTL";
+  const isNational = isNationalCountry;
+  const isInternational = isInternationalCountry;
   const missingForFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD_COP - estimatedSubtotalCop);
 
   // El <select> de país de destino muestra la lista conocida; si el valor
@@ -666,6 +770,162 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                     </>
                   )}
 
+                  {/* Cotización de envío EN VIVO (Envia.com) — solo
+                      informativa, nunca se suma al monto que cobra Wompi.
+                      Nacional: una sola tarjeta con el estimado. Si Envia
+                      falla, no se muestra nada y el pago no se bloquea. */}
+                  {isNational && domesticQuote && (
+                    <div className="border border-white/20 p-3 space-y-2">
+                      <p className="text-xs text-white/80">
+                        Envío estimado:{" "}
+                        <span className="font-semibold text-white">
+                          {formatCop(domesticQuote.estimateCop)}
+                        </span>{" "}
+                        vía {domesticQuote.carrier} ({domesticQuote.service}).
+                      </p>
+                      <label className="flex items-start gap-2 cursor-pointer text-[11px] text-white/60 leading-relaxed">
+                        <input
+                          type="checkbox"
+                          checked={shippingConfirmed}
+                          onChange={(e) => setShippingConfirmed(e.target.checked)}
+                          className="mt-0.5 shrink-0"
+                        />
+                        <span>
+                          Confirmo que revisé el estimado de envío. Este valor lo define la
+                          transportadora, no Inti Net, y el monto final puede variar respecto a
+                          este estimado.
+                        </span>
+                      </label>
+                    </div>
+                  )}
+
+                  {/* Internacional: tres opciones seleccionables. Premium y
+                      Económica salen de Envia (si Envia falla, no
+                      aparecen); Ultra-económica es fija y siempre aparece,
+                      no depende de ninguna API. Ninguna preseleccionada. */}
+                  {isInternational &&
+                    draft.city &&
+                    draft.state &&
+                    draft.postalCode &&
+                    draft.destinationCountry && (
+                      <div className="space-y-2">
+                        <p className="text-[10px] tracking-[0.2em] uppercase text-white/45">
+                          Elige tu opción de envío
+                        </p>
+                        <div className="space-y-2">
+                          {intlQuotes.premium && (
+                            <label
+                              className={`flex items-start gap-2 border p-3 cursor-pointer transition-colors ${
+                                selectedShipping === "premium"
+                                  ? "border-white bg-white/5"
+                                  : "border-white/20 hover:border-white/40"
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name="shipping-option"
+                                checked={selectedShipping === "premium"}
+                                onChange={() => setSelectedShipping("premium")}
+                                className="mt-0.5 shrink-0"
+                              />
+                              <span className="text-xs">
+                                <span className="block font-semibold text-white">
+                                  Premium — {formatCop(intlQuotes.premium.priceCop)}
+                                </span>
+                                <span className="block text-white/55 mt-0.5">
+                                  {intlQuotes.premium.carrier} ({intlQuotes.premium.service})
+                                  {intlQuotes.premium.days > 0
+                                    ? ` · ${intlQuotes.premium.days} días aprox.`
+                                    : ""}{" "}
+                                  — la entrega más rápida.
+                                </span>
+                              </span>
+                            </label>
+                          )}
+
+                          {intlQuotes.economica && (
+                            <label
+                              className={`flex items-start gap-2 border p-3 cursor-pointer transition-colors ${
+                                selectedShipping === "economica"
+                                  ? "border-white bg-white/5"
+                                  : "border-white/20 hover:border-white/40"
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name="shipping-option"
+                                checked={selectedShipping === "economica"}
+                                onChange={() => setSelectedShipping("economica")}
+                                className="mt-0.5 shrink-0"
+                              />
+                              <span className="text-xs">
+                                <span className="block font-semibold text-white">
+                                  Económica — {formatCop(intlQuotes.economica.priceCop)}
+                                </span>
+                                <span className="block text-white/55 mt-0.5">
+                                  {intlQuotes.economica.carrier} ({intlQuotes.economica.service})
+                                  {intlQuotes.economica.days > 0
+                                    ? ` · ${intlQuotes.economica.days} días aprox.`
+                                    : ""}{" "}
+                                  — el precio más bajo.
+                                </span>
+                              </span>
+                            </label>
+                          )}
+
+                          <label
+                            className={`flex items-start gap-2 border p-3 cursor-pointer transition-colors ${
+                              selectedShipping === "ultra"
+                                ? "border-white bg-white/5"
+                                : "border-white/20 hover:border-white/40"
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="shipping-option"
+                              checked={selectedShipping === "ultra"}
+                              onChange={() => setSelectedShipping("ultra")}
+                              className="mt-0.5 shrink-0"
+                            />
+                            <span className="text-xs">
+                              <span className="block font-semibold text-white">Ultra-económica</span>
+                              <span className="block text-white/55 mt-0.5 leading-relaxed">
+                                La opción más económica, pero también la más lenta — puede tardar
+                                varias semanas y no tiene fecha garantizada. Esta es la única
+                                opción de envío para la que pedimos la cotización exacta por
+                                Instagram: escríbenos después de tu compra para coordinarla.
+                              </span>
+                              <a
+                                href={CONTACT.instagram}
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="inline-block mt-1.5 text-[10px] tracking-[0.15em] uppercase underline text-white/70 hover:text-white transition-colors"
+                              >
+                                Escríbenos por Instagram ({CONTACT.instagramHandle})
+                              </a>
+                            </span>
+                          </label>
+                        </div>
+
+                        <label className="flex items-start gap-2 cursor-pointer text-[11px] text-white/60 leading-relaxed">
+                          <input
+                            type="checkbox"
+                            checked={shippingConfirmed}
+                            disabled={!selectedShipping}
+                            onChange={(e) => setShippingConfirmed(e.target.checked)}
+                            className="mt-0.5 shrink-0 disabled:opacity-40"
+                          />
+                          <span>
+                            Confirmo que revisé y elegí una opción de envío. El valor final lo
+                            define la transportadora (o se coordina por Instagram si elijo la
+                            opción ultra-económica), no Inti Net, y puede variar respecto a lo
+                            mostrado aquí.
+                          </span>
+                        </label>
+                      </div>
+                    )}
+
                   {error && <p className="text-xs text-red-400">{error}</p>}
 
                   {/* Verificación anti-bots. El div queda vacío hasta que
@@ -674,9 +934,30 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                       por sí solo no bloquea nada. */}
                   <div ref={turnstileContainerRef} className="flex justify-center py-1" />
 
+                  {/* Igual que con Turnstile: mientras haya al menos un
+                      estimado de envío visible (nacional con cotización
+                      disponible, o internacional con los campos completos
+                      — que siempre incluye la tarjeta fija
+                      "Ultra-económica") y el cliente no haya marcado el
+                      checkbox correspondiente, el botón de pago queda
+                      deshabilitado. Si Envia falla en nacional, no hay
+                      nada que confirmar y el pago no se bloquea. */}
                   <button
                     type="submit"
-                    disabled={busy || items.length === 0 || !turnstileToken}
+                    disabled={
+                      busy ||
+                      items.length === 0 ||
+                      !turnstileToken ||
+                      ((Boolean(isNational && domesticQuote) ||
+                        Boolean(
+                          isInternational &&
+                            draft.city &&
+                            draft.state &&
+                            draft.postalCode &&
+                            draft.destinationCountry,
+                        )) &&
+                        !shippingConfirmed)
+                    }
                     className="group w-full h-16 flex flex-col items-center justify-center gap-1 bg-white text-black border border-white hover:bg-transparent hover:text-white transition-colors disabled:opacity-40"
                   >
                     {busy ? (
