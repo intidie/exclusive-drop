@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://inti-net.vercel.app/sitemap.xml
