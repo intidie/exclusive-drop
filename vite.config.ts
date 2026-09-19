@@ -30,4 +30,19 @@ export default defineConfig({
     server: { entry: "server" },
   },
   nitro: nitroConfig,
+  // Refuerzo del fix de arriba: en vez de depender ÚNICAMENTE de que Nitro
+  // fusione "tslib" dentro de cada chunk que lo necesita (con `noExternals`
+  // eso pasó para un chunk pero no para otro — el chunking de Rollup no es
+  // 100% predecible entre builds/entornos), este alias apunta el
+  // specifier "tslib" directo al archivo .mjs real del paquete. Así Vite
+  // lo trata como un módulo local normal (se resuelve por ruta de
+  // archivo, no por resolución de paquete en runtime) sin importar en qué
+  // chunk termine, eliminando la dependencia de Node en runtime.
+  vite: {
+    resolve: {
+      alias: {
+        tslib: "tslib/tslib.es6.mjs",
+      },
+    },
+  },
 });
