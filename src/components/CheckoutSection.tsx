@@ -32,9 +32,9 @@ export default function CheckoutSection() {
           </p>
           <p className="mt-2 text-sm text-white/50 max-w-2xl">
             Talla XXL tiene un recargo de $15.000. Envío nacional gratis en compras superiores a
-            $250.000; por debajo de ese monto el envío corre por cuenta del comprador y se
-            coordina aparte. Los envíos internacionales siempre se coordinan aparte con nuestro
-            equipo después del pago.
+            $250.000; por debajo de ese monto el envío corre por cuenta del comprador y no se
+            cobra por Wompi. Los envíos internacionales tampoco se cobran por Wompi, salvo la
+            opción ultra-económica (solo México), que sí se suma al total.
           </p>
           <WompiVerifiedBadge className="mt-4" />
         </motion.div>
@@ -51,9 +51,17 @@ export default function CheckoutSection() {
             Envíos internacionales
           </h3>
           <p className="mt-3 text-sm text-white/60">
-            Ya puedes comprar desde fuera de Colombia con precio fijo en dólares. El costo y
-            tiempo de envío internacional se coordina directamente contigo por Instagram una vez
-            registrado el pedido.
+            Ya puedes comprar desde fuera de Colombia con precio fijo en dólares. En el formulario
+            de pago eliges entre tres opciones de envío: Express y Económica (costo y días de
+            llegada aproximados, calculados automáticamente con Envia.com) y Ultra-económica.
+            El valor de Express y Económica es un aproximado, lo paga el cliente a la
+            transportadora y es responsabilidad exclusiva de la transportadora, no de Inti Net.
+          </p>
+          <p className="mt-3 text-xs text-amber-300/90 border border-amber-300/30 bg-amber-300/5 px-3 py-2 leading-relaxed">
+            <span className="font-bold text-red-500">(Válida solo para México)</span>{" "}
+            Ultra-económica (transportadora 4-72): llega entre 15 y 25 días y tiene un valor fijo
+            de $83.050 COP que SÍ se suma a tu pago con Wompi. Es la única opción de envío que
+            modifica el valor de Wompi; ninguna otra lo hace.
           </p>
           <p className="mt-3 text-xs text-amber-300/90 border border-amber-300/30 bg-amber-300/5 px-3 py-2 leading-relaxed">
             ⚠ El cobro real se procesa en pesos colombianos (COP) a la TRM oficial del día

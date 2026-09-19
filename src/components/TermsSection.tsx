@@ -18,7 +18,7 @@ const TERMS = [
   },
   {
     t: "Envíos",
-    d: "Envíos nacionales dentro de Colombia y envíos internacionales (costo y tiempo se coordinan aparte por Instagram tras la compra). Cada camisa es realizada a mano, por lo que el despacho se hace 1 semana después de la compra. El envío nacional es gratuito en compras superiores a $250.000; por debajo de ese monto, el costo de envío corre por cuenta del comprador y se coordina aparte (no se cobra a través de Wompi).",
+    d: "Envíos nacionales dentro de Colombia y envíos internacionales. El costo de envío se muestra como un valor aproximado calculado automáticamente con Envia.com; lo define y es responsabilidad exclusiva de la transportadora, no de Inti Net, y para poder pagar el cliente debe confirmar que leyó esa información. El envío no se cobra por Wompi, con una sola excepción: la opción ultra-económica (transportadora 4-72, 15 a 25 días, solo para México), cuyo valor fijo de $83.050 COP sí se suma al pago. Cada camisa es realizada a mano, por lo que el despacho se hace 1 semana después de la compra. El envío nacional es gratuito en compras superiores a $250.000; por debajo de ese monto, el costo de envío corre por cuenta del comprador (precio informativo, aproximado y cercano al valor real; no se cobra a través de Wompi).",
   },
   {
     t: "Cambios y devoluciones",

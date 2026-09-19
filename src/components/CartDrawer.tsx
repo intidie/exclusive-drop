@@ -147,7 +147,7 @@ export default function CartDrawer() {
                   </div>
                   {isInternational ? (
                     <p className="text-[11px] text-white/55">
-                      El envío internacional se cotiza y coordina aparte con nuestro equipo.
+                      El envío internacional se cotiza en el formulario de pago y no se cobra por Wompi (salvo la opción ultra-económica, solo México).
                     </p>
                   ) : missing > 0 ? (
                     <p className="text-[11px] text-white/55">
@@ -161,7 +161,7 @@ export default function CartDrawer() {
                     <span className="font-mono">{format(subtotal)}</span>
                   </div>
                   <p className="text-[10px] text-white/40">
-                    El envío (si aplica) se coordina aparte y no se cobra por Wompi. Talla XXL
+                    El envío (si aplica) no se cobra por Wompi, salvo la opción ultra-económica para México. Talla XXL
                     incluye un recargo de {format(XXL_SURCHARGE_COP)}.
                   </p>
                   <button

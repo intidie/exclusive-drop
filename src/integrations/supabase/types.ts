@@ -38,6 +38,7 @@ export type Database = {
           shipping_address: string | null
           shipping_city: string | null
           shipping_carrier: string | null
+          shipping_confirmed_at: string | null
           shipping_cop: number
           shipping_department: string | null
           shipping_estimate_cop: number | null
@@ -74,6 +75,7 @@ export type Database = {
           shipping_address?: string | null
           shipping_city?: string | null
           shipping_carrier?: string | null
+          shipping_confirmed_at?: string | null
           shipping_cop?: number
           shipping_department?: string | null
           shipping_estimate_cop?: number | null
@@ -110,6 +112,7 @@ export type Database = {
           shipping_address?: string | null
           shipping_city?: string | null
           shipping_carrier?: string | null
+          shipping_confirmed_at?: string | null
           shipping_cop?: number
           shipping_department?: string | null
           shipping_estimate_cop?: number | null

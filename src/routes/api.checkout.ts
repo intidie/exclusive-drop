@@ -6,12 +6,18 @@ const VALID_SIZES = ["S", "M", "L", "XL", "XXL"];
 const VALID_COUNTRIES = ["CO", "INTL"] as const;
 type CountryCode = (typeof VALID_COUNTRIES)[number];
 const VALID_DOC_TYPES = ["CC", "NIT", "CE", "PASAPORTE", "OTRO"] as const;
+// Opciones de envío que el checkout puede registrar en `orders.shipping_method`.
+// - domestic / domestic_unquoted: nacional (con o sin cotización de Envia).
+// - intl_express / intl_economica: cotizadas con Envia, solo informativas.
+// - intl_ultra_mx: 4-72, SOLO México, ÚNICA que se suma al cobro de Wompi.
+// - intl_unquoted: internacional sin cotización disponible (Envia caído).
 const VALID_SHIPPING_METHODS = [
   "domestic",
-  "intl_premium",
+  "domestic_unquoted",
+  "intl_express",
   "intl_economica",
-  "intl_ultra",
   "intl_ultra_mx",
+  "intl_unquoted",
 ] as const;
 type ShippingMethod = (typeof VALID_SHIPPING_METHODS)[number];
 
@@ -142,13 +148,20 @@ export const Route = createFileRoute("/api/checkout")({
         )
           ? (rawShippingMethod as ShippingMethod)
           : null;
-        const shippingCarrier = sanitize(body["shippingCarrier"], 80);
-        const shippingService = sanitize(body["shippingService"], 80);
+        let shippingCarrier = sanitize(body["shippingCarrier"], 80);
+        let shippingService = sanitize(body["shippingService"], 80);
         const rawShippingEstimateCop = Number(body["shippingEstimateCop"]);
-        const shippingEstimateCop =
-          Number.isFinite(rawShippingEstimateCop) && rawShippingEstimateCop >= 0
+        let shippingEstimateCop: number | null =
+          body["shippingEstimateCop"] != null &&
+          Number.isFinite(rawShippingEstimateCop) &&
+          rawShippingEstimateCop >= 0
             ? Math.round(Math.min(rawShippingEstimateCop, 5_000_000))
             : null;
+        // El cliente debe haber marcado la casilla de confirmación del envío
+        // (el botón de Wompi ya está deshabilitado sin ella, pero acá se
+        // exige del lado del servidor por si alguien llama al endpoint
+        // directo).
+        const shippingConfirmed = body["shippingConfirmed"] === true;
 
         // Único dato de "categoría de envío" que decide el cliente: solo hay
         // dos casos válidos, nacional o internacional. Esto NO cambia la
@@ -185,6 +198,9 @@ export const Route = createFileRoute("/api/checkout")({
               400,
             );
           }
+          if (shippingMethod !== "domestic" && shippingMethod !== "domestic_unquoted") {
+            return jsonResponse({ error: "Confirma la información de envío nacional." }, 400);
+          }
         } else {
           if (!idNumber || !email || !postalCode || !state || !destinationCountry) {
             return jsonResponse(
@@ -200,10 +216,10 @@ export const Route = createFileRoute("/api/checkout")({
           // misma validación, del lado del servidor, por si alguien llama
           // a este endpoint directo sin pasar por el formulario.
           const validIntlMethods: ShippingMethod[] = [
-            "intl_premium",
+            "intl_express",
             "intl_economica",
-            "intl_ultra",
             "intl_ultra_mx",
+            "intl_unquoted",
           ];
           if (!shippingMethod || !validIntlMethods.includes(shippingMethod)) {
             return jsonResponse({ error: "Selecciona una opción de envío." }, 400);
@@ -222,6 +238,27 @@ export const Route = createFileRoute("/api/checkout")({
               400,
             );
           }
+        }
+
+        if (!shippingConfirmed) {
+          return jsonResponse(
+            { error: "Debes confirmar que leíste la información del envío antes de pagar." },
+            400,
+          );
+        }
+
+        // Para la única opción que sí se cobra (México 4-72), el registro de
+        // transportadora/servicio/valor lo fija el servidor, no el cliente.
+        if (shippingMethod === "intl_ultra_mx") {
+          shippingCarrier = MEXICO_ULTRA_ECONOMICA_SHIPPING.carrier;
+          shippingService = "Ultra-económica";
+          shippingEstimateCop = MEXICO_ULTRA_ECONOMICA_SHIPPING.surchargeCop;
+        }
+        // Sin cotización no hay valor que registrar.
+        if (shippingMethod === "domestic_unquoted" || shippingMethod === "intl_unquoted") {
+          shippingCarrier = "";
+          shippingService = "";
+          shippingEstimateCop = null;
         }
 
         // Credenciales de Wompi: una sola cuenta, una sola moneda (COP) para
@@ -374,6 +411,7 @@ export const Route = createFileRoute("/api/checkout")({
             shipping_service: shippingService || null,
             shipping_estimate_cop: shippingEstimateCop,
             shipping_cop: shippingExtraCop,
+            shipping_confirmed_at: new Date().toISOString(),
             // Nacional: documento de identidad + departamento.
             doc_type: isNational ? docType : null,
             doc_number: isNational ? docNumber : null,

@@ -162,6 +162,9 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
   }>({ premium: null, economica: null });
   const [selectedShipping, setSelectedShipping] = useState<"premium" | "economica" | "ultra" | "">("");
   const [shippingConfirmed, setShippingConfirmed] = useState(false);
+  // true mientras se espera la respuesta de /api/shipping-quote: el botón de
+  // pago queda bloqueado para que nadie pague antes de ver el aproximado.
+  const [quoteLoading, setQuoteLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -220,6 +223,7 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
       setIntlQuotes({ premium: null, economica: null });
       setSelectedShipping("");
       setShippingConfirmed(false);
+      setQuoteLoading(false);
       return;
     }
 
@@ -275,18 +279,22 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
   // hay token configurado, la ruta responde con los campos en `null` y
   // simplemente no se muestra nada (nacional) o solo queda la tarjeta fija
   // "Ultra-económica" (internacional) — el pago nunca se bloquea por eso.
+  const totalQty = items.reduce((sum, i) => sum + i.qty, 0);
+
   useEffect(() => {
     if (!open) return;
 
     setSelectedShipping("");
     setShippingConfirmed(false);
+    setQuoteLoading(false);
 
-    const qty = items.reduce((sum, i) => sum + i.qty, 0);
+    const qty = totalQty;
     let cancelled = false;
 
     if (isNationalCountry) {
       setDomesticQuote(null);
       if (!draft.city || !draft.department) return;
+      setQuoteLoading(true);
       const timer = setTimeout(() => {
         fetch("/api/shipping-quote", {
           method: "POST",
@@ -299,6 +307,9 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
           })
           .catch(() => {
             if (!cancelled) setDomesticQuote(null);
+          })
+          .finally(() => {
+            if (!cancelled) setQuoteLoading(false);
           });
       }, 600);
       return () => {
@@ -310,6 +321,7 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
     if (isInternationalCountry) {
       setIntlQuotes({ premium: null, economica: null });
       if (!draft.city || !draft.state || !draft.postalCode || !draft.destinationCountry) return;
+      setQuoteLoading(true);
       const timer = setTimeout(() => {
         fetch("/api/shipping-quote", {
           method: "POST",
@@ -329,6 +341,9 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
           })
           .catch(() => {
             if (!cancelled) setIntlQuotes({ premium: null, economica: null });
+          })
+          .finally(() => {
+            if (!cancelled) setQuoteLoading(false);
           });
       }, 600);
       return () => {
@@ -345,7 +360,7 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
     draft.state,
     draft.postalCode,
     draft.destinationCountry,
-    items,
+    totalQty,
   ]);
 
   const estimatedSubtotalCop = items.reduce(
@@ -357,6 +372,52 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
   const isInternational = isInternationalCountry;
   const destinationIsMexico = isInternational && isMexicoDestination(draft.destinationCountry);
   const missingForFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD_COP - estimatedSubtotalCop);
+
+  // --- Envío: qué hay que mostrar y qué hay que confirmar antes de pagar ---
+  const nationalAddressComplete = isNational && Boolean(draft.city && draft.department);
+  const intlAddressComplete =
+    isInternational && Boolean(draft.city && draft.state && draft.postalCode && draft.destinationCountry);
+  // Con la dirección completa SIEMPRE hay que marcar la casilla de envío.
+  const shippingAckRequired = nationalAddressComplete || intlAddressComplete;
+  // Internacional: ¿hay al menos una opción elegible? (Ultra solo si es México.)
+  const hasIntlOption = Boolean(intlQuotes.premium || intlQuotes.economica) || destinationIsMexico;
+
+  type ShippingSummary = { label: string; carrier: string; amountCop: number; chargedInWompi: boolean };
+  let selectedSummary: ShippingSummary | null = null;
+  if (isInternational) {
+    if (selectedShipping === "premium" && intlQuotes.premium) {
+      selectedSummary = {
+        label: "Express",
+        carrier: intlQuotes.premium.carrier,
+        amountCop: intlQuotes.premium.priceCop,
+        chargedInWompi: false,
+      };
+    } else if (selectedShipping === "economica" && intlQuotes.economica) {
+      selectedSummary = {
+        label: "Económica",
+        carrier: intlQuotes.economica.carrier,
+        amountCop: intlQuotes.economica.priceCop,
+        chargedInWompi: false,
+      };
+    } else if (selectedShipping === "ultra" && destinationIsMexico) {
+      selectedSummary = {
+        label: "Ultra-económica",
+        carrier: MEXICO_ULTRA_ECONOMICA_SHIPPING.carrier,
+        amountCop: MEXICO_ULTRA_ECONOMICA_SHIPPING.surchargeCop,
+        chargedInWompi: true,
+      };
+    }
+  }
+
+  const shippingReady =
+    !shippingAckRequired ||
+    (!quoteLoading && shippingConfirmed && (!isInternational || !hasIntlOption || selectedSummary !== null));
+
+  // Cambiar de opción invalida la confirmación: el valor del texto cambia.
+  function selectShipping(option: "premium" | "economica" | "ultra") {
+    setSelectedShipping(option);
+    setShippingConfirmed(false);
+  }
 
   // El <select> de país de destino muestra la lista conocida; si el valor
   // guardado no está en la lista (o está vacío), se interpreta como "Otro
@@ -395,43 +456,44 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
     // Misma validación que ya deshabilita el botón de pago (ver `disabled`
     // más abajo), repetida acá por seguridad de UX antes de llamar al
     // servidor, que es quien de verdad la hace cumplir.
-    if (isNational && domesticQuote && !shippingConfirmed) {
-      setError("Confirma que revisaste el estimado de envío antes de pagar.");
-      return;
-    }
-    if (isInternational && draft.city && draft.state && draft.postalCode && draft.destinationCountry) {
-      if (!selectedShipping) {
+    if (shippingAckRequired) {
+      if (quoteLoading) {
+        setError("Espera un momento: estamos calculando el costo aproximado de tu envío.");
+        return;
+      }
+      if (isInternational && hasIntlOption && !selectedSummary) {
         setError("Elige una opción de envío internacional antes de pagar.");
         return;
       }
       if (!shippingConfirmed) {
-        setError("Confirma la opción de envío elegida antes de pagar.");
+        setError("Marca la casilla de confirmación del envío para poder pagar.");
         return;
       }
     }
 
     setBusy(true);
 
-    // Traduce la selección visual ("premium" / "economica" / "ultra") a la
-    // opción concreta que entiende el servidor. "ultra" es una sola tarjeta
-    // en pantalla, pero representa dos cosas distintas según el destino:
-    // "intl_ultra_mx" (4-72, SÍ se cobra, solo México) o "intl_ultra"
-    // (coordinado por Instagram, informativo, cualquier otro país). El
-    // servidor vuelve a validar esta misma correspondencia — el cliente
-    // nunca decide el monto, solo indica qué eligió.
+    // Traduce la selección visual a la opción concreta que entiende el
+    // servidor. El servidor vuelve a validar todo (p. ej. que "intl_ultra_mx"
+    // solo exista para México y fija él mismo el recargo de 83.050) — el
+    // cliente nunca decide el monto, solo indica qué eligió.
     let shippingMethod: string | null = null;
     let shippingCarrier = "";
     let shippingService = "";
     let shippingEstimateCop: number | null = null;
 
-    if (isNational && domesticQuote) {
-      shippingMethod = "domestic";
-      shippingCarrier = domesticQuote.carrier;
-      shippingService = domesticQuote.service;
-      shippingEstimateCop = domesticQuote.estimateCop;
+    if (isNational) {
+      if (domesticQuote) {
+        shippingMethod = "domestic";
+        shippingCarrier = domesticQuote.carrier;
+        shippingService = domesticQuote.service;
+        shippingEstimateCop = domesticQuote.estimateCop;
+      } else {
+        shippingMethod = "domestic_unquoted";
+      }
     } else if (isInternational) {
       if (selectedShipping === "premium" && intlQuotes.premium) {
-        shippingMethod = "intl_premium";
+        shippingMethod = "intl_express";
         shippingCarrier = intlQuotes.premium.carrier;
         shippingService = intlQuotes.premium.service;
         shippingEstimateCop = intlQuotes.premium.priceCop;
@@ -445,11 +507,8 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
         shippingCarrier = MEXICO_ULTRA_ECONOMICA_SHIPPING.carrier;
         shippingService = "Ultra-económica";
         shippingEstimateCop = MEXICO_ULTRA_ECONOMICA_SHIPPING.surchargeCop;
-      } else if (selectedShipping === "ultra") {
-        shippingMethod = "intl_ultra";
-        shippingCarrier = "Coordinado por Instagram";
-        shippingService = "Ultra-económica";
-        shippingEstimateCop = null;
+      } else if (!hasIntlOption) {
+        shippingMethod = "intl_unquoted";
       }
     }
 
@@ -483,6 +542,7 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
           shippingCarrier,
           shippingService,
           shippingEstimateCop,
+          shippingConfirmed,
           turnstileToken,
         }),
       });
@@ -657,9 +717,10 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                         banco.
                       </p>
                       <p>
-                        {destinationIsMexico
-                          ? "El envío internacional no está incluido en este pago, salvo que elijas la opción ultra-económica (4-72): esa sí se suma al total. Premium y Económica se coordinan y se pagan aparte con la transportadora."
-                          : "El envío internacional no está incluido en este pago: se cotiza y coordina aparte con nuestro equipo por Instagram después de la compra."}
+                        El envío internacional NO está incluido en este pago con Wompi: lo paga el
+                        cliente a la transportadora. La única excepción es la opción
+                        ultra-económica (4-72, válida solo para México), cuyo valor sí se suma al
+                        total de Wompi.
                       </p>
                     </div>
                   )}
@@ -838,117 +899,74 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                     </>
                   )}
 
-                  {/* Cotización de envío EN VIVO (Envia.com) — solo
-                      informativa, nunca se suma al monto que cobra Wompi.
-                      Nacional: una sola tarjeta con el estimado. Si Envia
-                      falla, no se muestra nada y el pago no se bloquea. */}
-                  {isNational && domesticQuote && (
+                  {/* Envío NACIONAL — cotización automática (Envia.com), solo
+                      informativa: NO está conectada con Wompi, la paga el
+                      cliente. Sin marcar la casilla, el botón de Wompi queda
+                      deshabilitado. */}
+                  {nationalAddressComplete && (
                     <div className="border border-white/20 p-3 space-y-2">
-                      <p className="text-xs text-white/80">
-                        Envío estimado:{" "}
-                        <span className="font-semibold text-white">
-                          {formatCop(domesticQuote.estimateCop)}
-                        </span>{" "}
-                        vía {domesticQuote.carrier} ({domesticQuote.service}).
-                      </p>
+                      {quoteLoading ? (
+                        <p className="text-xs text-white/60">
+                          Calculando el costo aproximado de tu envío…
+                        </p>
+                      ) : domesticQuote ? (
+                        <p className="text-xs text-white/80">
+                          Envío aproximado:{" "}
+                          <span className="font-semibold text-white">
+                            {formatCop(domesticQuote.estimateCop)}
+                          </span>{" "}
+                          vía {domesticQuote.carrier} ({domesticQuote.service}).
+                        </p>
+                      ) : (
+                        <p className="text-xs text-white/60">
+                          No pudimos calcular el costo aproximado de tu envío en este momento. Lo
+                          define la transportadora.
+                        </p>
+                      )}
                       <p className="text-[11px] text-white/50 leading-relaxed">
-                        Este valor es informativo: es un aproximado, cercano al costo real que
-                        cobra la transportadora, pero puede variar. El envío corre por cuenta del
-                        cliente y no se incluye en el pago con Wompi.
+                        Precio informativo: es un aproximado, muy cercano al valor real, pero
+                        puede variar. El envío corre por cuenta del cliente: este valor no está
+                        conectado con Wompi ni se suma a tu pago, y lo define la transportadora,
+                        no Inti Net.
                       </p>
-                      <label className="flex items-start gap-2 cursor-pointer text-[11px] text-white/60 leading-relaxed">
-                        <input
-                          type="checkbox"
-                          checked={shippingConfirmed}
-                          onChange={(e) => setShippingConfirmed(e.target.checked)}
-                          className="mt-0.5 shrink-0"
-                        />
-                        <span>
-                          Confirmo que revisé el estimado de envío. Este valor lo define la
-                          transportadora, no Inti Net, y el monto final puede variar respecto a
-                          este estimado.
-                        </span>
-                      </label>
+                      {!quoteLoading && (
+                        <label className="flex items-start gap-2 cursor-pointer text-[11px] text-white/60 leading-relaxed">
+                          <input
+                            type="checkbox"
+                            checked={shippingConfirmed}
+                            onChange={(e) => setShippingConfirmed(e.target.checked)}
+                            className="mt-0.5 shrink-0"
+                          />
+                          <span>
+                            {domesticQuote
+                              ? `Confirmo que leí la información del envío: el valor aproximado es ${formatCop(domesticQuote.estimateCop)}, lo paga el cliente y es responsabilidad exclusiva de la transportadora, no de Inti Net.`
+                              : "Confirmo que leí la información del envío: su costo lo paga el cliente y es responsabilidad exclusiva de la transportadora, no de Inti Net."}
+                          </span>
+                        </label>
+                      )}
                     </div>
                   )}
 
-                  {/* Internacional: tres opciones seleccionables. Premium y
-                      Económica salen de Envia (si Envia falla, no
-                      aparecen); Ultra-económica es fija y siempre aparece,
-                      no depende de ninguna API. Ninguna preseleccionada. */}
-                  {isInternational &&
-                    draft.city &&
-                    draft.state &&
-                    draft.postalCode &&
-                    draft.destinationCountry && (
-                      <div className="space-y-2">
-                        <p className="text-[10px] tracking-[0.2em] uppercase text-white/45">
-                          Elige tu opción de envío
+                  {/* Envío INTERNACIONAL — tres opciones. Express y Económica
+                      salen de Envia.com (solo informativas). Ultra-económica
+                      es fija, solo México, y es la ÚNICA que se suma al cobro
+                      de Wompi. Ninguna viene preseleccionada. */}
+                  {intlAddressComplete && (
+                    <div className="space-y-2">
+                      <p className="text-[10px] tracking-[0.2em] uppercase text-white/45">
+                        Elige tu opción de envío
+                      </p>
+                      {quoteLoading && (
+                        <p className="text-xs text-white/60">
+                          Calculando los costos aproximados de tu envío…
                         </p>
-                        <div className="space-y-2">
-                          {intlQuotes.premium && (
-                            <label
-                              className={`flex items-start gap-2 border p-3 cursor-pointer transition-colors ${
-                                selectedShipping === "premium"
-                                  ? "border-white bg-white/5"
-                                  : "border-white/20 hover:border-white/40"
-                              }`}
-                            >
-                              <input
-                                type="radio"
-                                name="shipping-option"
-                                checked={selectedShipping === "premium"}
-                                onChange={() => setSelectedShipping("premium")}
-                                className="mt-0.5 shrink-0"
-                              />
-                              <span className="text-xs">
-                                <span className="block font-semibold text-white">
-                                  Premium — {formatCop(intlQuotes.premium.priceCop)}
-                                </span>
-                                <span className="block text-white/55 mt-0.5">
-                                  {intlQuotes.premium.carrier} ({intlQuotes.premium.service})
-                                  {intlQuotes.premium.days > 0
-                                    ? ` · ${intlQuotes.premium.days} días aprox.`
-                                    : ""}{" "}
-                                  — la entrega más rápida.
-                                </span>
-                              </span>
-                            </label>
-                          )}
+                      )}
 
-                          {intlQuotes.economica && (
-                            <label
-                              className={`flex items-start gap-2 border p-3 cursor-pointer transition-colors ${
-                                selectedShipping === "economica"
-                                  ? "border-white bg-white/5"
-                                  : "border-white/20 hover:border-white/40"
-                              }`}
-                            >
-                              <input
-                                type="radio"
-                                name="shipping-option"
-                                checked={selectedShipping === "economica"}
-                                onChange={() => setSelectedShipping("economica")}
-                                className="mt-0.5 shrink-0"
-                              />
-                              <span className="text-xs">
-                                <span className="block font-semibold text-white">
-                                  Económica — {formatCop(intlQuotes.economica.priceCop)}
-                                </span>
-                                <span className="block text-white/55 mt-0.5">
-                                  {intlQuotes.economica.carrier} ({intlQuotes.economica.service})
-                                  {intlQuotes.economica.days > 0
-                                    ? ` · ${intlQuotes.economica.days} días aprox.`
-                                    : ""}{" "}
-                                  — el precio más bajo.
-                                </span>
-                              </span>
-                            </label>
-                          )}
-
+                      <div className="space-y-2">
+                        {intlQuotes.premium && (
                           <label
                             className={`flex items-start gap-2 border p-3 cursor-pointer transition-colors ${
-                              selectedShipping === "ultra"
+                              selectedShipping === "premium"
                                 ? "border-white bg-white/5"
                                 : "border-white/20 hover:border-white/40"
                             }`}
@@ -956,77 +974,151 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                             <input
                               type="radio"
                               name="shipping-option"
-                              checked={selectedShipping === "ultra"}
-                              onChange={() => setSelectedShipping("ultra")}
+                              checked={selectedShipping === "premium"}
+                              onChange={() => selectShipping("premium")}
                               className="mt-0.5 shrink-0"
                             />
-                            {destinationIsMexico ? (
-                              <span className="text-xs">
-                                <span className="block font-semibold text-white">
-                                  Ultra-económica ({MEXICO_ULTRA_ECONOMICA_SHIPPING.carrier}) —{" "}
-                                  {formatCop(MEXICO_ULTRA_ECONOMICA_SHIPPING.surchargeCop)}
-                                </span>
-                                <span className="block text-white/55 mt-0.5 leading-relaxed">
-                                  Con {MEXICO_ULTRA_ECONOMICA_SHIPPING.carrier}, exclusiva para
-                                  México: la más lenta, entre{" "}
-                                  {MEXICO_ULTRA_ECONOMICA_SHIPPING.minDays} y{" "}
-                                  {MEXICO_ULTRA_ECONOMICA_SHIPPING.maxDays} días, sin fecha
-                                  garantizada.
-                                </span>
-                                <span className="block text-amber-300/90 mt-1 font-medium leading-relaxed">
-                                  A diferencia de las demás opciones de envío, este valor de{" "}
-                                  {formatCop(MEXICO_ULTRA_ECONOMICA_SHIPPING.surchargeCop)} SÍ se
-                                  suma a tu pago con Wompi — no es solo informativo.
-                                </span>
+                            <span className="text-xs">
+                              <span className="block font-semibold text-white">
+                                Express — {formatCop(intlQuotes.premium.priceCop)} aprox.
                               </span>
-                            ) : (
-                              <span className="text-xs">
-                                <span className="block font-semibold text-white">Ultra-económica</span>
-                                <span className="block text-white/55 mt-0.5 leading-relaxed">
-                                  La opción más económica, pero también la más lenta — puede tardar
-                                  varias semanas y no tiene fecha garantizada. Esta es la única
-                                  opción de envío para la que pedimos la cotización exacta por
-                                  Instagram: escríbenos después de tu compra para coordinarla.
-                                </span>
-                                <a
-                                  href={CONTACT.instagram}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="inline-block mt-1.5 text-[10px] tracking-[0.15em] uppercase underline text-white/70 hover:text-white transition-colors"
-                                >
-                                  Escríbenos por Instagram ({CONTACT.instagramHandle})
-                                </a>
+                              <span className="block text-white/55 mt-0.5">
+                                {intlQuotes.premium.carrier} ({intlQuotes.premium.service}) ·{" "}
+                                {intlQuotes.premium.days > 0
+                                  ? `llega en ${intlQuotes.premium.days} días aprox.`
+                                  : "tiempo de llegada no informado por la transportadora"}{" "}
+                                — la entrega más rápida.
                               </span>
-                            )}
+                            </span>
                           </label>
-                        </div>
-
-                        {destinationIsMexico && selectedShipping === "ultra" && (
-                          <p className="text-[11px] text-amber-300/90 leading-relaxed border border-amber-300/30 p-2">
-                            Al pagar, tu compra incluirá{" "}
-                            {formatCop(MEXICO_ULTRA_ECONOMICA_SHIPPING.surchargeCop)} adicionales
-                            de envío ({MEXICO_ULTRA_ECONOMICA_SHIPPING.carrier}). El total que
-                            verás en el botón de Wompi ya lo incluye.
-                          </p>
                         )}
 
+                        {intlQuotes.economica && (
+                          <label
+                            className={`flex items-start gap-2 border p-3 cursor-pointer transition-colors ${
+                              selectedShipping === "economica"
+                                ? "border-white bg-white/5"
+                                : "border-white/20 hover:border-white/40"
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="shipping-option"
+                              checked={selectedShipping === "economica"}
+                              onChange={() => selectShipping("economica")}
+                              className="mt-0.5 shrink-0"
+                            />
+                            <span className="text-xs">
+                              <span className="block font-semibold text-white">
+                                Económica — {formatCop(intlQuotes.economica.priceCop)} aprox.
+                              </span>
+                              <span className="block text-white/55 mt-0.5">
+                                {intlQuotes.economica.carrier} ({intlQuotes.economica.service}) ·{" "}
+                                {intlQuotes.economica.days > 0
+                                  ? `llega en ${intlQuotes.economica.days} días aprox.`
+                                  : "tiempo de llegada no informado por la transportadora"}{" "}
+                                — el precio más bajo.
+                              </span>
+                            </span>
+                          </label>
+                        )}
+
+                        {/* Ultra-económica: siempre visible, pero solo se
+                            puede elegir si el destino es México. */}
+                        <label
+                          className={`block border p-3 transition-colors ${
+                            destinationIsMexico
+                              ? selectedShipping === "ultra"
+                                ? "cursor-pointer border-white bg-white/5"
+                                : "cursor-pointer border-white/20 hover:border-white/40"
+                              : "cursor-not-allowed border-white/10 opacity-60"
+                          }`}
+                        >
+                          <span className="block text-[11px] font-bold uppercase tracking-[0.15em] text-red-500 mb-2">
+                            (Válida solo para México)
+                          </span>
+                          <span className="flex items-start gap-2">
+                            <input
+                              type="radio"
+                              name="shipping-option"
+                              checked={selectedShipping === "ultra"}
+                              disabled={!destinationIsMexico}
+                              onChange={() => selectShipping("ultra")}
+                              className="mt-0.5 shrink-0"
+                            />
+                            <span className="text-xs">
+                              <span className="block font-semibold text-white">
+                                Ultra-económica ({MEXICO_ULTRA_ECONOMICA_SHIPPING.carrier}) —{" "}
+                                {formatCop(MEXICO_ULTRA_ECONOMICA_SHIPPING.surchargeCop)}
+                              </span>
+                              <span className="block text-white/55 mt-0.5 leading-relaxed">
+                                La más lenta: llega entre {MEXICO_ULTRA_ECONOMICA_SHIPPING.minDays} y{" "}
+                                {MEXICO_ULTRA_ECONOMICA_SHIPPING.maxDays} días, sin fecha
+                                garantizada.
+                                {!destinationIsMexico &&
+                                  " No disponible para tu país de destino."}
+                              </span>
+                              <span className="block text-amber-300/90 mt-1 font-medium leading-relaxed">
+                                Es la ÚNICA opción cuyo valor (
+                                {formatCop(MEXICO_ULTRA_ECONOMICA_SHIPPING.surchargeCop)}) SÍ se
+                                suma a tu pago con Wompi. Express y Económica no modifican el
+                                valor de Wompi.
+                              </span>
+                            </span>
+                          </span>
+                        </label>
+                      </div>
+
+                      {!quoteLoading && !hasIntlOption && (
+                        <p className="text-[11px] text-white/60 leading-relaxed border border-white/20 p-2">
+                          No pudimos calcular el costo aproximado de tu envío en este momento. El
+                          envío internacional lo paga el cliente a la transportadora y no se suma
+                          a tu pago con Wompi.
+                        </p>
+                      )}
+
+                      {selectedSummary && !selectedSummary.chargedInWompi && (
+                        <p className="text-[11px] text-amber-300/90 leading-relaxed border border-amber-300/30 p-2">
+                          Valor aproximado de tu envío {selectedSummary.label}:{" "}
+                          {formatCop(selectedSummary.amountCop)} ({selectedSummary.carrier}). Es un
+                          aproximado cercano al valor real, pero puede variar. NO se suma a tu pago
+                          con Wompi: lo paga el cliente y es responsabilidad exclusiva de la
+                          transportadora, no de Inti Net.
+                        </p>
+                      )}
+
+                      {selectedSummary?.chargedInWompi && (
+                        <p className="text-[11px] text-amber-300/90 leading-relaxed border border-amber-300/30 p-2">
+                          Al pagar, tu compra incluirá{" "}
+                          {formatCop(MEXICO_ULTRA_ECONOMICA_SHIPPING.surchargeCop)} adicionales de
+                          envío ({MEXICO_ULTRA_ECONOMICA_SHIPPING.carrier}, 15 a 25 días). El total
+                          que verás en el botón de Wompi ya lo incluye. Esta es la única opción de
+                          envío que modifica el valor de Wompi.
+                        </p>
+                      )}
+
+                      {!quoteLoading && (
                         <label className="flex items-start gap-2 cursor-pointer text-[11px] text-white/60 leading-relaxed">
                           <input
                             type="checkbox"
                             checked={shippingConfirmed}
-                            disabled={!selectedShipping}
+                            disabled={hasIntlOption && !selectedSummary}
                             onChange={(e) => setShippingConfirmed(e.target.checked)}
                             className="mt-0.5 shrink-0 disabled:opacity-40"
                           />
                           <span>
-                            {destinationIsMexico
-                              ? "Confirmo que revisé y elegí una opción de envío. El valor final lo define la transportadora, no Inti Net (salvo la ultra-económica 4-72, con valor fijo que sí se suma a mi pago con Wompi si la elijo), y puede variar respecto a lo mostrado aquí."
-                              : "Confirmo que revisé y elegí una opción de envío. El valor final lo define la transportadora (o se coordina por Instagram si elijo la opción ultra-económica), no Inti Net, y puede variar respecto a lo mostrado aquí."}
+                            {selectedSummary
+                              ? selectedSummary.chargedInWompi
+                                ? `Confirmo que leí la información del envío: elegí la opción ultra-económica (${MEXICO_ULTRA_ECONOMICA_SHIPPING.carrier}, solo México, 15 a 25 días). Su valor de ${formatCop(selectedSummary.amountCop)} se suma a mi pago con Wompi; la entrega es responsabilidad exclusiva de la transportadora, no de Inti Net.`
+                                : `Confirmo que leí la información del envío: el valor aproximado de la opción ${selectedSummary.label} es ${formatCop(selectedSummary.amountCop)}, lo pago yo a la transportadora, no se suma a mi pago con Wompi y es responsabilidad exclusiva de la transportadora, no de Inti Net. Puede variar respecto a este aproximado.`
+                              : hasIntlOption
+                                ? "Elige una opción de envío para poder confirmar."
+                                : "Confirmo que leí la información del envío: su costo lo pago yo a la transportadora, no se suma a mi pago con Wompi y es responsabilidad exclusiva de la transportadora, no de Inti Net."}
                           </span>
                         </label>
-                      </div>
-                    )}
+                      )}
+                    </div>
+                  )}
 
                   {error && <p className="text-xs text-red-400">{error}</p>}
 
@@ -1046,20 +1138,7 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                       nada que confirmar y el pago no se bloquea. */}
                   <button
                     type="submit"
-                    disabled={
-                      busy ||
-                      items.length === 0 ||
-                      !turnstileToken ||
-                      ((Boolean(isNational && domesticQuote) ||
-                        Boolean(
-                          isInternational &&
-                            draft.city &&
-                            draft.state &&
-                            draft.postalCode &&
-                            draft.destinationCountry,
-                        )) &&
-                        !shippingConfirmed)
-                    }
+                    disabled={busy || items.length === 0 || !turnstileToken || !shippingReady}
                     className="group w-full h-16 flex flex-col items-center justify-center gap-1 bg-white text-black border border-white hover:bg-transparent hover:text-white transition-colors disabled:opacity-40"
                   >
                     {busy ? (
@@ -1080,8 +1159,9 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                     <p className="text-[10px] text-white/45 leading-relaxed">
                       Pago internacional: se cobra en pesos colombianos (COP); tu banco hace la
                       conversión a tu moneda. Tu camisa se hace a mano y se despacha 1 semana después
-                      de la compra; el envío internacional no está incluido en este pago y se coordina
-                      aparte con nuestro equipo.
+                      de la compra. El envío internacional no está incluido en este pago con Wompi y
+                      lo paga el cliente a la transportadora, salvo la opción ultra-económica (solo
+                      México), que sí se suma al total.
                     </p>
                   ) : (
                     <p className="text-[10px] text-white/45 leading-relaxed">
