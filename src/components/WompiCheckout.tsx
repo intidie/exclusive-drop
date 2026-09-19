@@ -1139,10 +1139,15 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                   )}
 
                   {/* Envío INTERNACIONAL — tres opciones. Express y Económica
-                      salen de Envia.com (solo informativas). Ultra-económica
-                      es fija, solo México, y es la ÚNICA que se suma al cobro
-                      de Wompi. Ninguna viene preseleccionada. */}
-                  {intlAddressComplete && (
+                      salen de Envia.com (solo informativas, requieren la
+                      dirección completa). Ultra-económica es fija, solo
+                      México, y no depende de Envia — por eso el panel
+                      completo se muestra apenas se elige el país de destino,
+                      no solo cuando toda la dirección está completa (ese
+                      era el bug: antes, si faltaba una sola casilla como el
+                      código postal, ni siquiera la Ultra-económica se
+                      mostraba). Ninguna viene preseleccionada. */}
+                  {isInternational && destinationCountryHasRealValue && (
                     <div className="space-y-2">
                       <p className="text-[10px] tracking-[0.2em] uppercase text-white/45">
                         Elige tu opción de envío
@@ -1259,7 +1264,14 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                         </label>
                       </div>
 
-                      {!quoteLoading && !hasIntlOption && (
+                      {!quoteLoading && !hasIntlOption && !intlAddressComplete && (
+                        <p className="text-[11px] text-white/50 leading-relaxed border border-white/15 p-2">
+                          Completa ciudad, estado/provincia y código postal para ver el estimado de
+                          Express y Económica.
+                        </p>
+                      )}
+
+                      {!quoteLoading && !hasIntlOption && intlAddressComplete && (
                         <p className="text-[11px] text-white/60 leading-relaxed border border-white/20 p-2">
                           No pudimos calcular el costo aproximado de tu envío en este momento. El
                           envío internacional lo paga el cliente a la transportadora y no se suma a
