@@ -1,10 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
+import { MEXICO_ULTRA_ECONOMICA_SHIPPING, isMexicoDestination } from "@/lib/drop-data";
 
 const VALID_SIZES = ["S", "M", "L", "XL", "XXL"];
 const VALID_COUNTRIES = ["CO", "INTL"] as const;
 type CountryCode = (typeof VALID_COUNTRIES)[number];
 const VALID_DOC_TYPES = ["CC", "NIT", "CE", "PASAPORTE", "OTRO"] as const;
+const VALID_SHIPPING_METHODS = [
+  "domestic",
+  "intl_premium",
+  "intl_economica",
+  "intl_ultra",
+  "intl_ultra_mx",
+] as const;
+type ShippingMethod = (typeof VALID_SHIPPING_METHODS)[number];
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -120,6 +129,27 @@ export const Route = createFileRoute("/api/checkout")({
         const state = sanitize(body["state"], 60);
         const destinationCountry = sanitize(body["destinationCountry"], 60);
 
+        // --- Opción de envío elegida por el cliente (informativa, salvo
+        // "intl_ultra_mx" — ver más abajo). `shippingCarrier`,
+        // `shippingService` y `shippingEstimateCop` solo se guardan como
+        // registro de lo que el cliente vio; NUNCA se usan para calcular
+        // el monto que se cobra, excepto el recargo fijo de México que
+        // calcula el propio servidor (MEXICO_ULTRA_ECONOMICA_SHIPMENT),
+        // nunca el valor que mande el cliente. ---
+        const rawShippingMethod = sanitize(body["shippingMethod"], 20);
+        const shippingMethod: ShippingMethod | null = VALID_SHIPPING_METHODS.includes(
+          rawShippingMethod as ShippingMethod,
+        )
+          ? (rawShippingMethod as ShippingMethod)
+          : null;
+        const shippingCarrier = sanitize(body["shippingCarrier"], 80);
+        const shippingService = sanitize(body["shippingService"], 80);
+        const rawShippingEstimateCop = Number(body["shippingEstimateCop"]);
+        const shippingEstimateCop =
+          Number.isFinite(rawShippingEstimateCop) && rawShippingEstimateCop >= 0
+            ? Math.round(Math.min(rawShippingEstimateCop, 5_000_000))
+            : null;
+
         // Único dato de "categoría de envío" que decide el cliente: solo hay
         // dos casos válidos, nacional o internacional. Esto NO cambia la
         // moneda ni permite manipular el monto — ambos casos se cobran en
@@ -161,6 +191,33 @@ export const Route = createFileRoute("/api/checkout")({
               {
                 error:
                   "Para compras internacionales faltan datos: documento de identificación, correo, código postal, estado/provincia o país de destino.",
+              },
+              400,
+            );
+          }
+          // El checkbox de confirmación en el formulario ya obliga a elegir
+          // una de las tres tarjetas antes de poder pagar — esta es la
+          // misma validación, del lado del servidor, por si alguien llama
+          // a este endpoint directo sin pasar por el formulario.
+          const validIntlMethods: ShippingMethod[] = [
+            "intl_premium",
+            "intl_economica",
+            "intl_ultra",
+            "intl_ultra_mx",
+          ];
+          if (!shippingMethod || !validIntlMethods.includes(shippingMethod)) {
+            return jsonResponse({ error: "Selecciona una opción de envío." }, 400);
+          }
+          // "intl_ultra_mx" (4-72) es EXCLUSIVA de México — es la única
+          // opción de envío que se suma al cobro de Wompi. Si el destino
+          // no es México, se rechaza para que el monto cobrado nunca
+          // dependa de lo que el cliente mande, solo de lo que el
+          // servidor puede verificar.
+          if (shippingMethod === "intl_ultra_mx" && !isMexicoDestination(destinationCountry)) {
+            return jsonResponse(
+              {
+                error:
+                  "La opción de envío ultra-económica (4-72) solo está disponible para destinos en México.",
               },
               400,
             );
@@ -237,18 +294,23 @@ export const Route = createFileRoute("/api/checkout")({
           });
         }
 
-        // El envío NO se cobra por este sistema (ni nacional ni
-        // internacional: el internacional se cotiza y coordina aparte con
-        // el cliente). El subtotal SIEMPRE nace en COP desde
-        // `products.price_cop` / `product_sizes.extra_price_cop` en
-        // Supabase — el cliente jamás envía ni puede alterar un precio. Se
-        // cobra en pesos colombianos tal cual, sea pedido nacional o
-        // internacional; si el pedido es internacional, el banco o la
-        // tarjeta del cliente hace la conversión a su propia moneda al
-        // momento de pagar.
+        // El envío NO se cobra por este sistema en ningún caso, CON UNA
+        // SOLA EXCEPCIÓN: el envío ultra-económico internacional (4-72)
+        // cuando el destino es México — ese sí se suma, con un valor FIJO
+        // que decide el servidor (MEXICO_ULTRA_ECONOMICA_SHIPPING), nunca
+        // el que mande el cliente. Todo lo demás (nacional, premium,
+        // económica, ultra-económica fuera de México) sigue siendo
+        // puramente informativo. El subtotal de productos SIEMPRE nace en
+        // COP desde `products.price_cop` / `product_sizes.extra_price_cop`
+        // en Supabase — el cliente jamás envía ni puede alterar un precio.
         const subtotalCop = lines.reduce((sum, l) => sum + l.unitPriceCop * l.qty, 0);
+        const shippingExtraCop =
+          !isNational && shippingMethod === "intl_ultra_mx" && isMexicoDestination(destinationCountry)
+            ? MEXICO_ULTRA_ECONOMICA_SHIPPING.surchargeCop
+            : 0;
+        const totalCop = subtotalCop + shippingExtraCop;
         const currency = "COP" as const;
-        const amountInCents = subtotalCop * 100;
+        const amountInCents = totalCop * 100;
 
         // Solo informativo: registra qué estimado en USD vio el cliente al
         // pagar (con la TRM real de mercado del momento), para tener
@@ -302,6 +364,16 @@ export const Route = createFileRoute("/api/checkout")({
             customer_email: email || null,
             shipping_city: city,
             shipping_address: address,
+            // Opción de envío elegida (ver validación arriba). shipping_cop
+            // es el ÚNICO monto de envío que de verdad se sumó al cobro de
+            // Wompi (siempre 0 salvo intl_ultra_mx); shipping_estimate_cop
+            // es solo lo que el cliente vio en pantalla, sin efecto en el
+            // cobro.
+            shipping_method: shippingMethod,
+            shipping_carrier: shippingCarrier || null,
+            shipping_service: shippingService || null,
+            shipping_estimate_cop: shippingEstimateCop,
+            shipping_cop: shippingExtraCop,
             // Nacional: documento de identidad + departamento.
             doc_type: isNational ? docType : null,
             doc_number: isNational ? docNumber : null,
@@ -335,7 +407,8 @@ export const Route = createFileRoute("/api/checkout")({
           publicKey,
           signature,
           subtotal: subtotalCop,
-          total: subtotalCop,
+          shippingExtraCop,
+          total: totalCop,
           fxRateUsed,
         });
       },

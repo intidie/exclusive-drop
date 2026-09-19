@@ -37,8 +37,12 @@ export type Database = {
           reference: string
           shipping_address: string | null
           shipping_city: string | null
+          shipping_carrier: string | null
           shipping_cop: number
           shipping_department: string | null
+          shipping_estimate_cop: number | null
+          shipping_method: string | null
+          shipping_service: string | null
           size: string | null
           state: string | null
           status: Database["public"]["Enums"]["order_status"]
@@ -69,8 +73,12 @@ export type Database = {
           reference: string
           shipping_address?: string | null
           shipping_city?: string | null
+          shipping_carrier?: string | null
           shipping_cop?: number
           shipping_department?: string | null
+          shipping_estimate_cop?: number | null
+          shipping_method?: string | null
+          shipping_service?: string | null
           size?: string | null
           state?: string | null
           status?: Database["public"]["Enums"]["order_status"]
@@ -101,8 +109,12 @@ export type Database = {
           reference?: string
           shipping_address?: string | null
           shipping_city?: string | null
+          shipping_carrier?: string | null
           shipping_cop?: number
           shipping_department?: string | null
+          shipping_estimate_cop?: number | null
+          shipping_method?: string | null
+          shipping_service?: string | null
           size?: string | null
           state?: string | null
           status?: Database["public"]["Enums"]["order_status"]

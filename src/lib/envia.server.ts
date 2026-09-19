@@ -26,6 +26,36 @@ export type EnviaRate = {
   days: number | null;
 };
 
+// El formulario de checkout guarda el país de destino como nombre visible
+// ("México", "Estados Unidos"...), no como código ISO2 — pero la API de
+// Envia SÍ espera el código ISO2 en `destination.country`. Esta tabla
+// traduce los nombres que ofrece el selector (ver DESTINATION_COUNTRIES en
+// drop-data.ts); si el cliente escribió un país distinto a mano en "Otro
+// país", se intenta un último recurso razonable y, si Envia no lo
+// reconoce, simplemente no devuelve tarifas (getEnviaRates ya maneja ese
+// caso devolviendo `null`, sin romper el checkout).
+const COUNTRY_NAME_TO_ISO2: Record<string, string> = {
+  "estados unidos": "US",
+  mexico: "MX",
+  canada: "CA",
+  espana: "ES",
+  argentina: "AR",
+  chile: "CL",
+  peru: "PE",
+  ecuador: "EC",
+  panama: "PA",
+  "costa rica": "CR",
+};
+
+function resolveCountryIso2(destinationCountry: string): string {
+  const normalized = destinationCountry
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+  return COUNTRY_NAME_TO_ISO2[normalized] ?? destinationCountry.trim().slice(0, 2).toUpperCase();
+}
+
 function getEnviaToken(): string | null {
   const token = process.env["ENVIA_API_TOKEN"]?.trim();
   return token || null;
@@ -120,6 +150,7 @@ export async function getEnviaRates(params: RateParams): Promise<EnviaRate[] | n
   }
 
   const isColombia = params.destinationCountry === "CO";
+  const destinationCountryIso2 = isColombia ? "CO" : resolveCountryIso2(params.destinationCountry);
 
   let destinationCityField = params.destinationCity;
   if (isColombia) {
@@ -149,7 +180,7 @@ export async function getEnviaRates(params: RateParams): Promise<EnviaRate[] | n
       street: "N/A",
       city: destinationCityField,
       state: params.destinationState,
-      country: params.destinationCountry,
+      country: destinationCountryIso2,
       postalCode: params.destinationPostalCode || undefined,
     },
     packages: [

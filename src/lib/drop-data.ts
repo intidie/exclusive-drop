@@ -18,6 +18,33 @@ export const ORIGINAL_PRICE = 99999;
 // siempre aparte con el cliente.
 export const FREE_SHIPPING_THRESHOLD_COP = 250000;
 
+// Única excepción a "el envío nunca se cobra por Wompi": el envío
+// ultra-económico internacional, pero SOLO cuando el destino es México.
+// Transportadora fija 4-72, sin cotización en vivo — el valor y el rango
+// de días son fijos y se suman al monto que cobra Wompi (ver
+// src/routes/api.checkout.ts). Para cualquier otro país, la opción
+// "ultra-económica" sigue siendo informativa y se coordina por Instagram,
+// sin costo adicional en el pago.
+export const MEXICO_ULTRA_ECONOMICA_SHIPPING = {
+  carrier: "4-72",
+  minDays: 15,
+  maxDays: 25,
+  surchargeCop: 83050,
+};
+
+// Compara el nombre del país de destino (tal como lo guarda el formulario,
+// p. ej. "México") contra "México", ignorando tildes/mayúsculas — para
+// que tanto "México" (del selector) como "mexico" (si el cliente lo
+// escribe a mano en "Otro país") activen la misma lógica.
+export function isMexicoDestination(destinationCountry: string): boolean {
+  const normalized = destinationCountry
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+  return normalized === "mexico";
+}
+
 export type CountryCode = "CO" | "INTL";
 
 // Tipos de documento de identidad válidos para pedidos nacionales. El

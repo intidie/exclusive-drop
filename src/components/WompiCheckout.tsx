@@ -5,12 +5,14 @@ import {
   DESTINATION_COUNTRIES,
   DOC_TYPES,
   FREE_SHIPPING_THRESHOLD_COP,
+  MEXICO_ULTRA_ECONOMICA_SHIPPING,
   PRICE,
   PRODUCTS,
   XXL_SURCHARGE_COP,
   copToUsd,
   formatCop,
   formatUsd,
+  isMexicoDestination,
   type CountryCode,
 } from "@/lib/drop-data";
 import type { CartItem } from "@/lib/cart-context";
@@ -353,6 +355,7 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
   const estimatedSubtotalUsd = copToUsd(estimatedSubtotalCop, trm);
   const isNational = isNationalCountry;
   const isInternational = isInternationalCountry;
+  const destinationIsMexico = isInternational && isMexicoDestination(draft.destinationCountry);
   const missingForFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD_COP - estimatedSubtotalCop);
 
   // El <select> de país de destino muestra la lista conocida; si el valor
@@ -389,7 +392,66 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
       return;
     }
 
+    // Misma validación que ya deshabilita el botón de pago (ver `disabled`
+    // más abajo), repetida acá por seguridad de UX antes de llamar al
+    // servidor, que es quien de verdad la hace cumplir.
+    if (isNational && domesticQuote && !shippingConfirmed) {
+      setError("Confirma que revisaste el estimado de envío antes de pagar.");
+      return;
+    }
+    if (isInternational && draft.city && draft.state && draft.postalCode && draft.destinationCountry) {
+      if (!selectedShipping) {
+        setError("Elige una opción de envío internacional antes de pagar.");
+        return;
+      }
+      if (!shippingConfirmed) {
+        setError("Confirma la opción de envío elegida antes de pagar.");
+        return;
+      }
+    }
+
     setBusy(true);
+
+    // Traduce la selección visual ("premium" / "economica" / "ultra") a la
+    // opción concreta que entiende el servidor. "ultra" es una sola tarjeta
+    // en pantalla, pero representa dos cosas distintas según el destino:
+    // "intl_ultra_mx" (4-72, SÍ se cobra, solo México) o "intl_ultra"
+    // (coordinado por Instagram, informativo, cualquier otro país). El
+    // servidor vuelve a validar esta misma correspondencia — el cliente
+    // nunca decide el monto, solo indica qué eligió.
+    let shippingMethod: string | null = null;
+    let shippingCarrier = "";
+    let shippingService = "";
+    let shippingEstimateCop: number | null = null;
+
+    if (isNational && domesticQuote) {
+      shippingMethod = "domestic";
+      shippingCarrier = domesticQuote.carrier;
+      shippingService = domesticQuote.service;
+      shippingEstimateCop = domesticQuote.estimateCop;
+    } else if (isInternational) {
+      if (selectedShipping === "premium" && intlQuotes.premium) {
+        shippingMethod = "intl_premium";
+        shippingCarrier = intlQuotes.premium.carrier;
+        shippingService = intlQuotes.premium.service;
+        shippingEstimateCop = intlQuotes.premium.priceCop;
+      } else if (selectedShipping === "economica" && intlQuotes.economica) {
+        shippingMethod = "intl_economica";
+        shippingCarrier = intlQuotes.economica.carrier;
+        shippingService = intlQuotes.economica.service;
+        shippingEstimateCop = intlQuotes.economica.priceCop;
+      } else if (selectedShipping === "ultra" && destinationIsMexico) {
+        shippingMethod = "intl_ultra_mx";
+        shippingCarrier = MEXICO_ULTRA_ECONOMICA_SHIPPING.carrier;
+        shippingService = "Ultra-económica";
+        shippingEstimateCop = MEXICO_ULTRA_ECONOMICA_SHIPPING.surchargeCop;
+      } else if (selectedShipping === "ultra") {
+        shippingMethod = "intl_ultra";
+        shippingCarrier = "Coordinado por Instagram";
+        shippingService = "Ultra-económica";
+        shippingEstimateCop = null;
+      }
+    }
 
     try {
       if (items.length === 0) throw new Error("Tu carrito está vacío.");
@@ -417,6 +479,10 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
           postalCode: draft.postalCode,
           state: draft.state,
           destinationCountry: draft.destinationCountry,
+          shippingMethod,
+          shippingCarrier,
+          shippingService,
+          shippingEstimateCop,
           turnstileToken,
         }),
       });
@@ -429,6 +495,7 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
         publicKey?: string;
         signature?: string;
         total?: number;
+        shippingExtraCop?: number;
         error?: string;
       } | null;
 
@@ -590,8 +657,9 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                         banco.
                       </p>
                       <p>
-                        El envío internacional no está incluido en este pago: se cotiza y coordina
-                        aparte con nuestro equipo por Instagram después de la compra.
+                        {destinationIsMexico
+                          ? "El envío internacional no está incluido en este pago, salvo que elijas la opción ultra-económica (4-72): esa sí se suma al total. Premium y Económica se coordinan y se pagan aparte con la transportadora."
+                          : "El envío internacional no está incluido en este pago: se cotiza y coordina aparte con nuestro equipo por Instagram después de la compra."}
                       </p>
                     </div>
                   )}
@@ -783,6 +851,11 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                         </span>{" "}
                         vía {domesticQuote.carrier} ({domesticQuote.service}).
                       </p>
+                      <p className="text-[11px] text-white/50 leading-relaxed">
+                        Este valor es informativo: es un aproximado, cercano al costo real que
+                        cobra la transportadora, pero puede variar. El envío corre por cuenta del
+                        cliente y no se incluye en el pago con Wompi.
+                      </p>
                       <label className="flex items-start gap-2 cursor-pointer text-[11px] text-white/60 leading-relaxed">
                         <input
                           type="checkbox"
@@ -887,26 +960,56 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                               onChange={() => setSelectedShipping("ultra")}
                               className="mt-0.5 shrink-0"
                             />
-                            <span className="text-xs">
-                              <span className="block font-semibold text-white">Ultra-económica</span>
-                              <span className="block text-white/55 mt-0.5 leading-relaxed">
-                                La opción más económica, pero también la más lenta — puede tardar
-                                varias semanas y no tiene fecha garantizada. Esta es la única
-                                opción de envío para la que pedimos la cotización exacta por
-                                Instagram: escríbenos después de tu compra para coordinarla.
+                            {destinationIsMexico ? (
+                              <span className="text-xs">
+                                <span className="block font-semibold text-white">
+                                  Ultra-económica ({MEXICO_ULTRA_ECONOMICA_SHIPPING.carrier}) —{" "}
+                                  {formatCop(MEXICO_ULTRA_ECONOMICA_SHIPPING.surchargeCop)}
+                                </span>
+                                <span className="block text-white/55 mt-0.5 leading-relaxed">
+                                  Con {MEXICO_ULTRA_ECONOMICA_SHIPPING.carrier}, exclusiva para
+                                  México: la más lenta, entre{" "}
+                                  {MEXICO_ULTRA_ECONOMICA_SHIPPING.minDays} y{" "}
+                                  {MEXICO_ULTRA_ECONOMICA_SHIPPING.maxDays} días, sin fecha
+                                  garantizada.
+                                </span>
+                                <span className="block text-amber-300/90 mt-1 font-medium leading-relaxed">
+                                  A diferencia de las demás opciones de envío, este valor de{" "}
+                                  {formatCop(MEXICO_ULTRA_ECONOMICA_SHIPPING.surchargeCop)} SÍ se
+                                  suma a tu pago con Wompi — no es solo informativo.
+                                </span>
                               </span>
-                              <a
-                                href={CONTACT.instagram}
-                                target="_blank"
-                                rel="noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="inline-block mt-1.5 text-[10px] tracking-[0.15em] uppercase underline text-white/70 hover:text-white transition-colors"
-                              >
-                                Escríbenos por Instagram ({CONTACT.instagramHandle})
-                              </a>
-                            </span>
+                            ) : (
+                              <span className="text-xs">
+                                <span className="block font-semibold text-white">Ultra-económica</span>
+                                <span className="block text-white/55 mt-0.5 leading-relaxed">
+                                  La opción más económica, pero también la más lenta — puede tardar
+                                  varias semanas y no tiene fecha garantizada. Esta es la única
+                                  opción de envío para la que pedimos la cotización exacta por
+                                  Instagram: escríbenos después de tu compra para coordinarla.
+                                </span>
+                                <a
+                                  href={CONTACT.instagram}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="inline-block mt-1.5 text-[10px] tracking-[0.15em] uppercase underline text-white/70 hover:text-white transition-colors"
+                                >
+                                  Escríbenos por Instagram ({CONTACT.instagramHandle})
+                                </a>
+                              </span>
+                            )}
                           </label>
                         </div>
+
+                        {destinationIsMexico && selectedShipping === "ultra" && (
+                          <p className="text-[11px] text-amber-300/90 leading-relaxed border border-amber-300/30 p-2">
+                            Al pagar, tu compra incluirá{" "}
+                            {formatCop(MEXICO_ULTRA_ECONOMICA_SHIPPING.surchargeCop)} adicionales
+                            de envío ({MEXICO_ULTRA_ECONOMICA_SHIPPING.carrier}). El total que
+                            verás en el botón de Wompi ya lo incluye.
+                          </p>
+                        )}
 
                         <label className="flex items-start gap-2 cursor-pointer text-[11px] text-white/60 leading-relaxed">
                           <input
@@ -917,10 +1020,9 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                             className="mt-0.5 shrink-0 disabled:opacity-40"
                           />
                           <span>
-                            Confirmo que revisé y elegí una opción de envío. El valor final lo
-                            define la transportadora (o se coordina por Instagram si elijo la
-                            opción ultra-económica), no Inti Net, y puede variar respecto a lo
-                            mostrado aquí.
+                            {destinationIsMexico
+                              ? "Confirmo que revisé y elegí una opción de envío. El valor final lo define la transportadora, no Inti Net (salvo la ultra-económica 4-72, con valor fijo que sí se suma a mi pago con Wompi si la elijo), y puede variar respecto a lo mostrado aquí."
+                              : "Confirmo que revisé y elegí una opción de envío. El valor final lo define la transportadora (o se coordina por Instagram si elijo la opción ultra-económica), no Inti Net, y puede variar respecto a lo mostrado aquí."}
                           </span>
                         </label>
                       </div>
