@@ -47,12 +47,16 @@ const COUNTRY_NAME_TO_ISO2: Record<string, string> = {
   "costa rica": "CR",
 };
 
-function resolveCountryIso2(destinationCountry: string): string {
-  const normalized = destinationCountry
+function normalizeText(value: string): string {
+  return value
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .trim()
     .toLowerCase();
+}
+
+function resolveCountryIso2(destinationCountry: string): string {
+  const normalized = normalizeText(destinationCountry);
   return COUNTRY_NAME_TO_ISO2[normalized] ?? destinationCountry.trim().slice(0, 2).toUpperCase();
 }
 
@@ -79,14 +83,18 @@ function getOriginAddress(): {
   return { name, phone, address, city, department, postalCode };
 }
 
-async function enviaFetch(path: string, body: unknown): Promise<unknown | null> {
+async function enviaFetch(
+  path: string,
+  body: unknown,
+  baseUrl = ENVIA_BASE_URL,
+): Promise<unknown | null> {
   const token = getEnviaToken();
   if (!token) {
     console.error("[envia] Falta ENVIA_API_TOKEN.");
     return null;
   }
   try {
-    const res = await fetch(`${ENVIA_BASE_URL}${path}`, {
+    const res = await fetch(`${baseUrl}${path}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -95,15 +103,88 @@ async function enviaFetch(path: string, body: unknown): Promise<unknown | null> 
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(8000),
     });
+    const text = await res.text();
     if (!res.ok) {
-      console.error(`[envia] ${path} respondió ${res.status}.`);
+      // Se loguea el cuerpo de la respuesta (no solo el status) para poder
+      // diagnosticar el motivo real sin tener que adivinar — Envia casi
+      // siempre manda un mensaje descriptivo en el body incluso en 4xx.
+      console.error(`[envia] ${path} respondió ${res.status}: ${text.slice(0, 500)}`);
       return null;
     }
-    return await res.json();
+    try {
+      return JSON.parse(text);
+    } catch {
+      console.error(`[envia] ${path} respondió un body no-JSON: ${text.slice(0, 500)}`);
+      return null;
+    }
   } catch (err) {
     console.error(`[envia] Error llamando a ${path}:`, err);
     return null;
   }
+}
+
+// La API de Envia exige, para el campo `state` de /locate en Colombia, su
+// PROPIO código de 2 letras por departamento (ej. "AT" para Atlántico, "CN"
+// para Cundinamarca) — NO el nombre del departamento ni el código numérico
+// del DANE. Ese código no está publicado en su documentación pública de
+// forma completa y puede variar, así que en vez de hardcodear una tabla que
+// podría estar mal, se consulta en vivo contra la propia API de Envia
+// (GET /state?country_code=CO) y se cachea en memoria — es un catálogo fijo,
+// no cambia entre requests. ESTE era el motivo real por el que nunca se
+// podía calcular ningún envío nacional: se le mandaba el nombre completo
+// del departamento ("Bogotá D.C.", "Antioquia"...) donde Envia esperaba su
+// código de 2 letras, así que /locate nunca encontraba coincidencia.
+let colombiaStateCodeCache: Record<string, string> | null = null;
+
+async function getColombiaStateCode(departmentName: string): Promise<string | null> {
+  if (!colombiaStateCodeCache) {
+    const token = getEnviaToken();
+    if (!token) return null;
+    try {
+      const res = await fetch("https://queries.envia.com/state?country_code=CO", {
+        headers: { Authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(8000),
+      });
+      const text = await res.text();
+      if (!res.ok) {
+        console.error(`[envia] /state respondió ${res.status}: ${text.slice(0, 500)}`);
+        return null;
+      }
+      const json = JSON.parse(text) as {
+        data?: Array<{ name?: string; code_2_digits?: string; country_code?: string }>;
+      };
+      const map: Record<string, string> = {};
+      for (const row of json.data ?? []) {
+        if (row.name && row.code_2_digits && (!row.country_code || row.country_code === "CO")) {
+          map[normalizeText(row.name)] = row.code_2_digits;
+        }
+      }
+      if (Object.keys(map).length === 0) {
+        console.error("[envia] /state?country_code=CO no devolvió departamentos.");
+        return null;
+      }
+      colombiaStateCodeCache = map;
+    } catch (err) {
+      console.error("[envia] Error obteniendo códigos de departamento:", err);
+      return null;
+    }
+  }
+
+  const normalized = normalizeText(departmentName);
+  if (colombiaStateCodeCache[normalized]) return colombiaStateCodeCache[normalized];
+
+  // Bogotá D.C. suele aparecer en el catálogo de Envia con variantes de
+  // nombre distintas a la que ofrece nuestro selector ("Bogotá", "Bogota
+  // D.C.", "Distrito Capital", etc.) — se prueba una coincidencia parcial
+  // antes de rendirse.
+  if (normalized.includes("bogota")) {
+    const bogotaKey = Object.keys(colombiaStateCodeCache).find((k) => k.includes("bogota"));
+    if (bogotaKey) return colombiaStateCodeCache[bogotaKey];
+  }
+  const partial = Object.keys(colombiaStateCodeCache).find(
+    (k) => k.includes(normalized) || normalized.includes(k),
+  );
+  return partial ? colombiaStateCodeCache[partial] : null;
 }
 
 // Resuelve el código DANE (8 dígitos) que exige Envia para el campo `city`
@@ -114,9 +195,15 @@ export async function locateColombiaCity(
   cityName: string,
   department: string,
 ): Promise<string | null> {
+  const stateCode = await getColombiaStateCode(department);
+  if (!stateCode) {
+    console.error(`[envia] No se pudo resolver el código de departamento para "${department}".`);
+    return null;
+  }
+
   const data = (await enviaFetch("/locate", {
     country: "CO",
-    state: department,
+    state: stateCode,
     city: cityName,
   })) as
     | { data?: Array<{ code?: string; city?: string }> }
@@ -206,21 +293,19 @@ export async function getEnviaRates(params: RateParams): Promise<EnviaRate[] | n
     },
   };
 
-  const data = (await enviaFetch("/ship/rate/", payload)) as
-    | {
-        data?: Array<{
-          carrier?: string;
-          service?: string;
-          carrier_description?: string;
-          serviceDescription?: string;
-          totalPrice?: number | string;
-          total_price?: number | string;
-          currency?: string;
-          deliveryEstimate?: string | number;
-          delivery_date?: string;
-        }>;
-      }
-    | null;
+  const data = (await enviaFetch("/ship/rate/", payload)) as {
+    data?: Array<{
+      carrier?: string;
+      service?: string;
+      carrier_description?: string;
+      serviceDescription?: string;
+      totalPrice?: number | string;
+      total_price?: number | string;
+      currency?: string;
+      deliveryEstimate?: string | number;
+      delivery_date?: string;
+    }>;
+  } | null;
 
   if (!data || !Array.isArray(data.data)) return null;
 
