@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
+  COLOMBIA_DEPARTMENTS,
   CONTACT,
   DESTINATION_COUNTRIES,
   DOC_TYPES,
@@ -28,7 +29,9 @@ type Phase = "form" | "sent";
 
 declare global {
   interface Window {
-    WidgetCheckout?: new (opts: Record<string, unknown>) => { open: (cb: (r: unknown) => void) => void };
+    WidgetCheckout?: new (opts: Record<string, unknown>) => {
+      open: (cb: (r: unknown) => void) => void;
+    };
     turnstile?: {
       render: (container: string | HTMLElement, options: Record<string, unknown>) => string;
       reset: (widgetId?: string) => void;
@@ -160,7 +163,9 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
     premium: { priceCop: number; carrier: string; service: string; days: number } | null;
     economica: { priceCop: number; carrier: string; service: string; days: number } | null;
   }>({ premium: null, economica: null });
-  const [selectedShipping, setSelectedShipping] = useState<"premium" | "economica" | "ultra" | "">("");
+  const [selectedShipping, setSelectedShipping] = useState<"premium" | "economica" | "ultra" | "">(
+    "",
+  );
   const [shippingConfirmed, setShippingConfirmed] = useState(false);
   // true mientras se espera la respuesta de /api/shipping-quote: el botón de
   // pago queda bloqueado para que nadie pague antes de ver el aproximado.
@@ -299,7 +304,12 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
         fetch("/api/shipping-quote", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ country: "CO", city: draft.city, department: draft.department, qty }),
+          body: JSON.stringify({
+            country: "CO",
+            city: draft.city,
+            department: draft.department,
+            qty,
+          }),
         })
           .then((r) => (r.ok ? r.json() : null))
           .then((d: { domestic?: typeof domesticQuote } | null) => {
@@ -336,9 +346,17 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
           }),
         })
           .then((r) => (r.ok ? r.json() : null))
-          .then((d: { premium?: typeof intlQuotes.premium; economica?: typeof intlQuotes.economica } | null) => {
-            if (!cancelled) setIntlQuotes({ premium: d?.premium ?? null, economica: d?.economica ?? null });
-          })
+          .then(
+            (
+              d: {
+                premium?: typeof intlQuotes.premium;
+                economica?: typeof intlQuotes.economica;
+              } | null,
+            ) => {
+              if (!cancelled)
+                setIntlQuotes({ premium: d?.premium ?? null, economica: d?.economica ?? null });
+            },
+          )
           .catch(() => {
             if (!cancelled) setIntlQuotes({ premium: null, economica: null });
           })
@@ -374,15 +392,37 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
   const missingForFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD_COP - estimatedSubtotalCop);
 
   // --- Envío: qué hay que mostrar y qué hay que confirmar antes de pagar ---
-  const nationalAddressComplete = isNational && Boolean(draft.city && draft.department);
+  // Los "sentinel" ("Otro", "Otro país", "Otra ciudad") marcan que el
+  // usuario eligió la opción "escribir a mano" en el <select> pero
+  // TODAVÍA no ha escrito el valor real en el campo de texto que se
+  // revela. Mientras el campo tenga ese valor literal, la dirección NO
+  // está completa: si se tratara como completa, se dispararía una
+  // cotización de envío con datos sin sentido (departamento "Otro",
+  // ciudad "Otra ciudad", etc.) y no calcularía nada útil.
+  const departmentHasRealValue = Boolean(draft.department) && draft.department !== "Otro";
+  const nationalCityHasRealValue = Boolean(draft.city) && draft.city !== "Otra ciudad";
+  const destinationCountryHasRealValue =
+    Boolean(draft.destinationCountry) && draft.destinationCountry !== "Otro país";
+  const intlCityHasRealValue = Boolean(draft.city) && draft.city !== "Otra ciudad";
+
+  const nationalAddressComplete = isNational && nationalCityHasRealValue && departmentHasRealValue;
   const intlAddressComplete =
-    isInternational && Boolean(draft.city && draft.state && draft.postalCode && draft.destinationCountry);
+    isInternational &&
+    intlCityHasRealValue &&
+    Boolean(draft.state) &&
+    Boolean(draft.postalCode) &&
+    destinationCountryHasRealValue;
   // Con la dirección completa SIEMPRE hay que marcar la casilla de envío.
   const shippingAckRequired = nationalAddressComplete || intlAddressComplete;
   // Internacional: ¿hay al menos una opción elegible? (Ultra solo si es México.)
   const hasIntlOption = Boolean(intlQuotes.premium || intlQuotes.economica) || destinationIsMexico;
 
-  type ShippingSummary = { label: string; carrier: string; amountCop: number; chargedInWompi: boolean };
+  type ShippingSummary = {
+    label: string;
+    carrier: string;
+    amountCop: number;
+    chargedInWompi: boolean;
+  };
   let selectedSummary: ShippingSummary | null = null;
   if (isInternational) {
     if (selectedShipping === "premium" && intlQuotes.premium) {
@@ -411,7 +451,9 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
 
   const shippingReady =
     !shippingAckRequired ||
-    (!quoteLoading && shippingConfirmed && (!isInternational || !hasIntlOption || selectedSummary !== null));
+    (!quoteLoading &&
+      shippingConfirmed &&
+      (!isInternational || !hasIntlOption || selectedSummary !== null));
 
   // Cambiar de opción invalida la confirmación: el valor del texto cambia.
   function selectShipping(option: "premium" | "economica" | "ultra") {
@@ -422,10 +464,62 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
   // El <select> de país de destino muestra la lista conocida; si el valor
   // guardado no está en la lista (o está vacío), se interpreta como "Otro
   // país" y se revela un campo de texto libre para escribirlo.
-  const knownCountryNames = DESTINATION_COUNTRIES.map((c) => c.name).filter((n) => n !== "Otro país");
+  //
+  // IMPORTANTE: al elegir "Otro país" del <select>, el valor que se guarda
+  // en el draft es literalmente "Otro país" (no ""). Si se guardara "",
+  // en el siguiente render `destinationSelectValue` volvería a caer en la
+  // rama `draft.destinationCountry === ""` y el <select> mostraría de
+  // nuevo el placeholder en vez de "Otro país" — perdiendo la selección y
+  // ocultando el campo de texto libre apenas aparecía (ese era el bug).
+  // Guardando el sentinel, el <select> se mantiene en "Otro país" y el
+  // campo de texto libre queda visible hasta que el cliente escriba su
+  // país real, que sobreescribe el sentinel.
+  const knownCountryNames = DESTINATION_COUNTRIES.map((c) => c.name).filter(
+    (n) => n !== "Otro país",
+  );
   const isKnownDestination = knownCountryNames.includes(draft.destinationCountry);
-  const destinationSelectValue = draft.destinationCountry === "" ? "" : isKnownDestination ? draft.destinationCountry : "Otro país";
+  const destinationSelectValue =
+    draft.destinationCountry === ""
+      ? ""
+      : isKnownDestination
+        ? draft.destinationCountry
+        : "Otro país";
   const showOtherDestinationInput = destinationSelectValue === "Otro país";
+
+  // Ciudades del país de destino elegido, para ofrecer la ciudad también
+  // como lista (no como texto libre): así el nombre que le llega a
+  // Envia.com para cotizar siempre es uno reconocible. Si el país es "Otro
+  // país" (texto libre) no hay lista de ciudades disponible, así que la
+  // ciudad se escribe directamente a mano. Mismo cuidado con el sentinel
+  // "Otra ciudad" que con "Otro país" arriba.
+  const intlCitiesForCountry =
+    DESTINATION_COUNTRIES.find((c) => c.name === destinationSelectValue)?.cities ?? [];
+  const intlCitySelectValue =
+    draft.city === "" ? "" : intlCitiesForCountry.includes(draft.city) ? draft.city : "Otra ciudad";
+  const showOtherIntlCityInput = showOtherDestinationInput || intlCitySelectValue === "Otra ciudad";
+
+  // Mismo patrón para el departamento (nacional): lista completa de los 32
+  // departamentos + Bogotá D.C., con "Otro" para escribirlo a mano si no
+  // está en la lista (mismo cuidado con el sentinel que arriba).
+  const knownDepartmentNames = COLOMBIA_DEPARTMENTS.map((d) => d.name).filter((n) => n !== "Otro");
+  const isKnownDepartment = knownDepartmentNames.includes(draft.department);
+  const departmentSelectValue =
+    draft.department === "" ? "" : isKnownDepartment ? draft.department : "Otro";
+  const showOtherDepartmentInput = departmentSelectValue === "Otro";
+
+  // Ciudades del departamento elegido, también como lista con "Otra
+  // ciudad" de respaldo. Si el departamento es "Otro" (texto libre), la
+  // ciudad se escribe directamente a mano.
+  const nationalCitiesForDepartment =
+    COLOMBIA_DEPARTMENTS.find((d) => d.name === departmentSelectValue)?.cities ?? [];
+  const nationalCitySelectValue =
+    draft.city === ""
+      ? ""
+      : nationalCitiesForDepartment.includes(draft.city)
+        ? draft.city
+        : "Otra ciudad";
+  const showOtherNationalCityInput =
+    showOtherDepartmentInput || nationalCitySelectValue === "Otra ciudad";
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -441,7 +535,11 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
     }
     if (
       draft.country === "INTL" &&
-      (!draft.idNumber || !draft.email || !draft.postalCode || !draft.state || !draft.destinationCountry)
+      (!draft.idNumber ||
+        !draft.email ||
+        !draft.postalCode ||
+        !draft.state ||
+        !draft.destinationCountry)
     ) {
       setError(
         "Para compras internacionales faltan datos: documento de identificación, correo, código postal, estado/provincia o país de destino.",
@@ -707,20 +805,19 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                   {isInternational && (
                     <div className="text-[11px] text-white/60 space-y-1.5">
                       <p>
-                        Subtotal estimado: {formatUsd(estimatedSubtotalUsd)} USD (cobro procesado
-                        en pesos colombianos, TRM del día {formatCop(trm)}/USD).
+                        Subtotal estimado: {formatUsd(estimatedSubtotalUsd)} USD (cobro procesado en
+                        pesos colombianos, TRM del día {formatCop(trm)}/USD).
                       </p>
                       <p>
-                        El cobro se realiza en pesos colombianos (COP); si tu tarjeta o banco está en
-                        el extranjero, ellos hacen la conversión a tu moneda al momento de pagar. No
-                        somos responsables por la tasa de cambio ni por comisiones que aplique tu
+                        El cobro se realiza en pesos colombianos (COP); si tu tarjeta o banco está
+                        en el extranjero, ellos hacen la conversión a tu moneda al momento de pagar.
+                        No somos responsables por la tasa de cambio ni por comisiones que aplique tu
                         banco.
                       </p>
                       <p>
                         El envío internacional NO está incluido en este pago con Wompi: lo paga el
-                        cliente a la transportadora. La única excepción es la opción
-                        ultra-económica (4-72, válida solo para México), cuyo valor sí se suma al
-                        total de Wompi.
+                        cliente a la transportadora. La única excepción es la opción ultra-económica
+                        (4-72, válida solo para México), cuyo valor sí se suma al total de Wompi.
                       </p>
                     </div>
                   )}
@@ -729,7 +826,11 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                     <p className="text-[10px] text-white/55 leading-relaxed max-w-[70%]">
                       Compra supervisada por Bancolombia · segura de extremo a extremo.
                     </p>
-                    <img src="/images/bancolombia-white.png" alt="Bancolombia" className="h-4 w-auto opacity-90" />
+                    <img
+                      src="/images/bancolombia-white.png"
+                      alt="Bancolombia"
+                      className="h-4 w-auto opacity-90"
+                    />
                   </div>
 
                   <input
@@ -745,7 +846,9 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                     <div className="grid grid-cols-2 gap-2">
                       <select
                         value={draft.docType}
-                        onChange={(e) => updateDraft({ docType: e.target.value as Draft["docType"] })}
+                        onChange={(e) =>
+                          updateDraft({ docType: e.target.value as Draft["docType"] })
+                        }
                         required
                         className={`${field} ${draft.docType === "" ? "text-white/35" : ""}`}
                       >
@@ -819,24 +922,79 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                   />
 
                   {isNational && (
-                    <div className="grid grid-cols-2 gap-2">
-                      <input
-                        value={draft.city}
-                        onChange={(e) => updateDraft({ city: e.target.value })}
-                        required
-                        maxLength={60}
-                        placeholder="Ciudad"
-                        className={field}
-                      />
-                      <input
-                        value={draft.department}
-                        onChange={(e) => updateDraft({ department: e.target.value })}
-                        required
-                        maxLength={60}
-                        placeholder="Departamento"
-                        className={field}
-                      />
-                    </div>
+                    <>
+                      <div className="grid grid-cols-2 gap-2">
+                        <select
+                          value={departmentSelectValue}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            // Cambiar de departamento invalida la ciudad
+                            // elegida (la lista de ciudades depende de él).
+                            // Se guarda el valor tal cual (incluyendo el
+                            // sentinel "Otro") para que el <select> no
+                            // pierda la selección — ver comentario arriba
+                            // de destinationSelectValue.
+                            updateDraft({ department: value, city: "" });
+                          }}
+                          required
+                          className={`${field} ${departmentSelectValue === "" ? "text-white/35" : ""}`}
+                        >
+                          <option value="" disabled>
+                            Departamento
+                          </option>
+                          {COLOMBIA_DEPARTMENTS.map((d) => (
+                            <option key={d.name} value={d.name} className="bg-black">
+                              {d.name}
+                            </option>
+                          ))}
+                        </select>
+                        {showOtherNationalCityInput ? (
+                          <input
+                            value={draft.city === "Otra ciudad" ? "" : draft.city}
+                            onChange={(e) => updateDraft({ city: e.target.value })}
+                            required
+                            maxLength={60}
+                            placeholder="Ciudad"
+                            className={field}
+                          />
+                        ) : (
+                          <select
+                            value={nationalCitySelectValue}
+                            onChange={(e) => updateDraft({ city: e.target.value })}
+                            required
+                            disabled={!departmentSelectValue}
+                            className={`${field} ${nationalCitySelectValue === "" ? "text-white/35" : ""} disabled:opacity-40`}
+                          >
+                            <option value="" disabled>
+                              Ciudad
+                            </option>
+                            {nationalCitiesForDepartment.map((c) => (
+                              <option key={c} value={c} className="bg-black">
+                                {c}
+                              </option>
+                            ))}
+                            <option value="Otra ciudad" className="bg-black">
+                              Otra ciudad
+                            </option>
+                          </select>
+                        )}
+                      </div>
+                      {showOtherDepartmentInput && (
+                        <input
+                          value={draft.department === "Otro" ? "" : draft.department}
+                          onChange={(e) => updateDraft({ department: e.target.value })}
+                          required
+                          maxLength={60}
+                          placeholder="Escribe tu departamento"
+                          className={field}
+                        />
+                      )}
+                      {showOtherNationalCityInput && !showOtherDepartmentInput && (
+                        <p className="text-[10px] text-white/40 -mt-1">
+                          Escribe tu ciudad o municipio exacto.
+                        </p>
+                      )}
+                    </>
                   )}
 
                   {isInternational && (
@@ -871,7 +1029,9 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                         value={destinationSelectValue}
                         onChange={(e) => {
                           const value = e.target.value;
-                          updateDraft({ destinationCountry: value === "Otro país" ? "" : value });
+                          // Cambiar de país invalida la ciudad elegida (la
+                          // lista de ciudades depende de él).
+                          updateDraft({ destinationCountry: value, city: "" });
                         }}
                         required
                         className={`${field} ${destinationSelectValue === "" ? "text-white/35" : ""}`}
@@ -888,13 +1048,45 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                       </select>
                       {showOtherDestinationInput && (
                         <input
-                          value={draft.destinationCountry}
+                          value={
+                            draft.destinationCountry === "Otro país" ? "" : draft.destinationCountry
+                          }
                           onChange={(e) => updateDraft({ destinationCountry: e.target.value })}
                           required
                           maxLength={60}
                           placeholder="Escribe tu país de destino"
                           className={field}
                         />
+                      )}
+                      {showOtherIntlCityInput ? (
+                        <input
+                          value={draft.city === "Otra ciudad" ? "" : draft.city}
+                          onChange={(e) => updateDraft({ city: e.target.value })}
+                          required
+                          maxLength={60}
+                          placeholder="Ciudad"
+                          className={field}
+                        />
+                      ) : (
+                        <select
+                          value={intlCitySelectValue}
+                          onChange={(e) => updateDraft({ city: e.target.value })}
+                          required
+                          disabled={!destinationSelectValue}
+                          className={`${field} ${intlCitySelectValue === "" ? "text-white/35" : ""} disabled:opacity-40`}
+                        >
+                          <option value="" disabled>
+                            Ciudad
+                          </option>
+                          {intlCitiesForCountry.map((c) => (
+                            <option key={c} value={c} className="bg-black">
+                              {c}
+                            </option>
+                          ))}
+                          <option value="Otra ciudad" className="bg-black">
+                            Otra ciudad
+                          </option>
+                        </select>
                       )}
                     </>
                   )}
@@ -924,10 +1116,9 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                         </p>
                       )}
                       <p className="text-[11px] text-white/50 leading-relaxed">
-                        Precio informativo: es un aproximado, muy cercano al valor real, pero
-                        puede variar. El envío corre por cuenta del cliente: este valor no está
-                        conectado con Wompi ni se suma a tu pago, y lo define la transportadora,
-                        no Inti Net.
+                        Precio informativo: es un aproximado, muy cercano al valor real, pero puede
+                        variar. El envío corre por cuenta del cliente: este valor no está conectado
+                        con Wompi ni se suma a tu pago, y lo define la transportadora, no Inti Net.
                       </p>
                       {!quoteLoading && (
                         <label className="flex items-start gap-2 cursor-pointer text-[11px] text-white/60 leading-relaxed">
@@ -1052,17 +1243,16 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                                 {formatCop(MEXICO_ULTRA_ECONOMICA_SHIPPING.surchargeCop)}
                               </span>
                               <span className="block text-white/55 mt-0.5 leading-relaxed">
-                                La más lenta: llega entre {MEXICO_ULTRA_ECONOMICA_SHIPPING.minDays} y{" "}
-                                {MEXICO_ULTRA_ECONOMICA_SHIPPING.maxDays} días, sin fecha
+                                La más lenta: llega entre {MEXICO_ULTRA_ECONOMICA_SHIPPING.minDays}{" "}
+                                y {MEXICO_ULTRA_ECONOMICA_SHIPPING.maxDays} días, sin fecha
                                 garantizada.
-                                {!destinationIsMexico &&
-                                  " No disponible para tu país de destino."}
+                                {!destinationIsMexico && " No disponible para tu país de destino."}
                               </span>
                               <span className="block text-amber-300/90 mt-1 font-medium leading-relaxed">
                                 Es la ÚNICA opción cuyo valor (
                                 {formatCop(MEXICO_ULTRA_ECONOMICA_SHIPPING.surchargeCop)}) SÍ se
-                                suma a tu pago con Wompi. Express y Económica no modifican el
-                                valor de Wompi.
+                                suma a tu pago con Wompi. Express y Económica no modifican el valor
+                                de Wompi.
                               </span>
                             </span>
                           </span>
@@ -1072,8 +1262,8 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                       {!quoteLoading && !hasIntlOption && (
                         <p className="text-[11px] text-white/60 leading-relaxed border border-white/20 p-2">
                           No pudimos calcular el costo aproximado de tu envío en este momento. El
-                          envío internacional lo paga el cliente a la transportadora y no se suma
-                          a tu pago con Wompi.
+                          envío internacional lo paga el cliente a la transportadora y no se suma a
+                          tu pago con Wompi.
                         </p>
                       )}
 
@@ -1097,14 +1287,25 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                         </p>
                       )}
 
+                      {/* BUG CORREGIDO: antes la casilla quedaba con
+                          `disabled` + opacidad 40% hasta que se elegía una
+                          opción de envío, lo que la hacía prácticamente
+                          invisible ("no aparece desde el principio"). Ahora
+                          la casilla siempre se ve y es clickeable; si
+                          todavía falta elegir una opción, el intento de
+                          marcarla simplemente no hace nada (el texto de al
+                          lado y la validación al pagar ya avisan qué
+                          falta). */}
                       {!quoteLoading && (
                         <label className="flex items-start gap-2 cursor-pointer text-[11px] text-white/60 leading-relaxed">
                           <input
                             type="checkbox"
                             checked={shippingConfirmed}
-                            disabled={hasIntlOption && !selectedSummary}
-                            onChange={(e) => setShippingConfirmed(e.target.checked)}
-                            className="mt-0.5 shrink-0 disabled:opacity-40"
+                            onChange={(e) => {
+                              if (hasIntlOption && !selectedSummary) return;
+                              setShippingConfirmed(e.target.checked);
+                            }}
+                            className="mt-0.5 shrink-0"
                           />
                           <span>
                             {selectedSummary
@@ -1142,14 +1343,28 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                     className="group w-full h-16 flex flex-col items-center justify-center gap-1 bg-white text-black border border-white hover:bg-transparent hover:text-white transition-colors disabled:opacity-40"
                   >
                     {busy ? (
-                      <span className="text-xs tracking-[0.2em] uppercase font-semibold">Preparando pago…</span>
+                      <span className="text-xs tracking-[0.2em] uppercase font-semibold">
+                        Preparando pago…
+                      </span>
                     ) : (
                       <>
-                        <span className="text-[9px] tracking-[0.2em] uppercase text-black/50 group-hover:text-white/50 transition-colors">Pagar de forma segura</span>
+                        <span className="text-[9px] tracking-[0.2em] uppercase text-black/50 group-hover:text-white/50 transition-colors">
+                          Pagar de forma segura
+                        </span>
                         <span className="flex items-center gap-3">
-                          <img src="/images/wompi-white.png" alt="Wompi" className="h-4 w-auto invert group-hover:invert-0 transition-[filter]" />
-                          <span className="text-black/20 group-hover:text-white/20 text-sm leading-none transition-colors">×</span>
-                          <img src="/images/bancolombia-white.png" alt="Bancolombia" className="h-3.5 w-auto invert group-hover:invert-0 transition-[filter]" />
+                          <img
+                            src="/images/wompi-white.png"
+                            alt="Wompi"
+                            className="h-4 w-auto invert group-hover:invert-0 transition-[filter]"
+                          />
+                          <span className="text-black/20 group-hover:text-white/20 text-sm leading-none transition-colors">
+                            ×
+                          </span>
+                          <img
+                            src="/images/bancolombia-white.png"
+                            alt="Bancolombia"
+                            className="h-3.5 w-auto invert group-hover:invert-0 transition-[filter]"
+                          />
                         </span>
                       </>
                     )}
@@ -1158,10 +1373,10 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                   {isInternational ? (
                     <p className="text-[10px] text-white/45 leading-relaxed">
                       Pago internacional: se cobra en pesos colombianos (COP); tu banco hace la
-                      conversión a tu moneda. Tu camisa se hace a mano y se despacha 1 semana después
-                      de la compra. El envío internacional no está incluido en este pago con Wompi y
-                      lo paga el cliente a la transportadora, salvo la opción ultra-económica (solo
-                      México), que sí se suma al total.
+                      conversión a tu moneda. Tu camisa se hace a mano y se despacha 1 semana
+                      después de la compra. El envío internacional no está incluido en este pago con
+                      Wompi y lo paga el cliente a la transportadora, salvo la opción
+                      ultra-económica (solo México), que sí se suma al total.
                     </p>
                   ) : (
                     <p className="text-[10px] text-white/45 leading-relaxed">
@@ -1191,16 +1406,17 @@ export default function WompiCheckout({ open, onClose, items }: Props) {
                       </div>
                       {isInternational && (
                         <p className="text-[11px] text-white/50">
-                          ≈ {formatUsd(copToUsd(totalCop, trm))} USD (referencial). El monto cobrado por
-                          Wompi es siempre en pesos colombianos; la conversión final la hace tu banco.
+                          ≈ {formatUsd(copToUsd(totalCop, trm))} USD (referencial). El monto cobrado
+                          por Wompi es siempre en pesos colombianos; la conversión final la hace tu
+                          banco.
                         </p>
                       )}
                     </div>
                   )}
                   <p className="text-sm text-white/70">
                     Tu pedido quedó registrado. Si el pago fue aprobado, tus camisas se elaboran a
-                    mano y se despachan 1 semana después de la compra. Cualquier duda escríbenos
-                    por Instagram.
+                    mano y se despachan 1 semana después de la compra. Cualquier duda escríbenos por
+                    Instagram.
                   </p>
                   <a
                     href={CONTACT.instagram}
